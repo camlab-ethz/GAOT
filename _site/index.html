@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']], // Defines $...$ and \(...\) for inline math
+        displayMath: [['$$', '$$'], ['\\[', '\\]']] // Defines $$...$$ and \[...\] for display math
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <meta name="description" content="GAOT: Geometry-Aware Operator Transformer for learning PDE solutions on arbitrary domains.">
+  <meta property="og:title" content="GAOT: Geometry Aware Operator Transformer"/>
+  <meta property="og:description" content="Efficient and Accurate Neural Surrogate for PDEs on Arbitrary Domains."/>
+  <meta property="og:url" content="https://github.com/camlab-ethz/GAOT"/> 
+  <meta property="og:image" content="static/images/gaot_model_performance_radar_proportional.png" /> 
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+
+  <meta name="twitter:title" content="GAOT: Geometry Aware Operator Transformer">
+  <meta name="twitter:description" content="Efficient and Accurate Neural Surrogate for PDEs on Arbitrary Domains.">
+  <meta name="twitter:image" content="static/images/gaot_model_performance_radar_proportional.png"> 
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="keywords" content="PDE, Operator Learning, Transformer, Graph Neural Operator, GNO, GAOT, Geometry-Aware, Surrogate Model, CFD, Deep Learning, Scientific Computing">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>GAOT: Geometry Aware Operator Transformer</title>
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+  rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css"> 
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script> 
+  <script src="static/js/bulma-slider.min.js"></script> 
+  <script src="static/js/index.js"></script>
+</head>
+<body>
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Geometry Aware Operator Transformer as an Efficient and Accurate Neural Surrogate for PDEs on Arbitrary Domains</h1>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><a href="https://shizheng-wen.github.io/" target="_blank">Shizheng Wen</a><sup>1</sup>,</span>
+              <span class="author-block"><a href="https://arsh-k.github.io/webpage/" target="_blank">Arsh Kumbhat</a><sup>1</sup>,</span>
+              <span class="author-block"><a href="https://scholar.google.com/citations?user=9pJIGJUAAAAJ&hl=en" target="_blank">Levi Lingsch</a><sup>1,2</sup>,</span>
+              <span class="author-block"><a href="https://scholar.google.com/citations?hl=en&user=gsgiQ0wAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Sepehr Mousavi</a><sup>1,3</sup>,</span>
+              <span class="author-block"><a href="https://cpraveen.github.io/" target="_blank">Praveen Chandrashekar</a><sup>4</sup>,</span>
+              <span class="author-block"><a href="https://camlab.ethz.ch/the-group/people.html?u=smishra" target="_blank">Siddhartha Mishra</a><sup>1,2</sup></span>
+            </div>
+
+            <div class="is-size-6 publication-affiliations" style="margin-top: 0.5rem;">
+              <span class="author-block"><sup>1</sup>Seminar for Applied Mathematics, ETH Zurich, Switzerland</span><br>
+              <span class="author-block"><sup>2</sup>ETH AI Center, Zurich, Switzerland</span><br>
+              <span class="author-block"><sup>3</sup>Department of Mechanical and Process Engineering, ETH Zurich, Switzerland</span><br>
+              <span class="author-block"><sup>4</sup>Centre for Applicable Mathematics, TIFR, India</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="static/pdfs/gaot.pdf" target="_blank" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://github.com/camlab-ethz/GAOT" target="_blank" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fab fa-github"></i></span>
+                    <span>Code</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://arxiv.org/abs/YOUR_ARXIV_ID_HERE" target="_blank" class="external-link button is-normal is-rounded is-dark"> 
+                    <span class="icon"><i class="ai ai-arxiv"></i></span>
+                    <span>arXiv</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+            <div class="container is-max-desktop" style="margin-top: 2rem;">
+              <img src="static/images/gaot_model_performance_radar_proportional.png" alt="GAOT Model Performance Radar Chart" style="max-width: 70%; height: auto; margin-left: auto; margin-right: auto; display: block;"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3 has-text-centered">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              The very challenging task of learning solution operators of PDEs on arbitrary domains accurately and efficiently is of vital importance to engineering and industrial simulations. Despite the existence of many operator learning algorithms to approximate such PDEs, we find that accurate models are not necessarily computationally efficient and vice versa. We address this issue by proposing a geometry aware operator transformer (GAOT) for learning PDEs on arbitrary domains. GAOT combines novel multiscale attentional graph neural operator encoders and decoders, together with geometry embeddings and (vision) transformer processors to accurately map information about the domain and the inputs into a robust approximation of the PDE solution. Multiple innovations in the implementation of GAOT also ensure computational efficiency and scalability. We demonstrate this significant gain in both accuracy and efficiency of GAOT over several baselines on a large number of learning tasks from a diverse set of PDEs, including achieving state of the art performance on a large scale three-dimensional industrial CFD dataset.
+            </p>
+          </div>
+          <div class="container is-max-desktop" style="margin-top: 2rem;">
+            <img src="static/images/architecture.png" alt="GAOT Model Architecture"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Efficiency</h2>
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <div class="content has-text-justified">
+            <p>
+              How the training throughput of a model scales with increasing input and model size, is absolutely crucial for evaluating whether it can be used to process large-scale datasets (input scalability) or whether it can serve as a backbone of foundation models (model scalability) which require large model sizes. To evaluate the scalability of different models, we plot how the training throughput changes as input size and model size for GAOT and three selected baselines (RIGNO-18 for Graph-based, GINO for FNO-based and Transolver for Transformer-based models). These experiments are conducted on one NVIDIA-4090 GPU with float32 precision.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="columns is-centered is-vcentered" style="margin-top: 1rem;">
+        <div class="column">
+          <img src="static/images/grid_vs_throughput.png" alt="Grid Resolution vs. Throughput"/>
+          <p class="has-text-centered" style="margin-top:0.5em;">Grid Resolution vs. Throughput</p>
+        </div>
+        <div class="column">
+          <img src="static/images/model_vs_throughput.png" alt="Model vs. Throughput"/>
+          <p class="has-text-centered" style="margin-top:0.5em;">Model vs. Throughput</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Accuracy</h2>
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <div class="content has-text-justified">
+            <p>
+              We extensively test GAOT on 24 challenging benchmarks for both time-independent and time-dependent PDEs of various types, ranging from regular grids to random point clouds to highly unstructured adapted grids, and compare it with 13 widely used baselines.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div id="accuracy-carousel" class="carousel results-carousel">
+        <div class="item">
+          <img src="static/images/accuracy.png" alt="Accuracy Result 1"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;"></h2>
+        </div>
+        <div class="item">
+          <img src="static/images/accuracy2.png" alt="Accuracy Result 3"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;"></h2>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Visualization</h2>
+      <div id="visualization-carousel" class="carousel results-carousel">
+        <div class="item">
+          <img src="static/images/vis/ce_gauss.png" alt="CE Gauss Visualization" style="max-width: 70%; height: auto; margin-left: auto; margin-right: auto; display: block;"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured CE-Gauss dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/ce_rp.png" alt="CE RP Visualization" style="max-width: 70%; height: auto; margin-left: auto; margin-right: auto; display: block;"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured CE-RP dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/naca0012.png" alt="NACA0012"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate and point distribution of test samples of the NACA0012 dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/naca2412.png" alt="NACA2412"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate and point distribution of test samples of the NACA2412 dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/rae2822.png" alt="RAE2822"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate and point distribution of test samples of the RAE2822 dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/bluff_body.png" alt="Bluff Body"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate and point distribution of test samples of the Bluff-Body dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/poisson_c_sines.png" alt="Poisson C Sines Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, and model estimate of a test sample of the Poisson-C-Sines dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/poisson_gauss.png" alt="Poisson Gauss Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, and model estimate of a test sample of the Poisson-Gauss dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/elasticity.png" alt="Elasticity Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, and model estimate of a test sample of the Elasticity dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/pressure_comparison.png" alt="Pressure Comparison Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate of a test sample N_S_WWS_WM_172 of the surface pressure on the DrivAerNet++.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/wws.png" alt="WWS"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate of a test sample N_S_WWS_WM_172 of the surface wall shear stress on the DrivAerNet++.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/ns_gauss.png" alt="NS Gauss Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-Gauss dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/ns_pwc.png" alt="NS PWC Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-PwC dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/ns_sl.png" alt="NS SL Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-SL dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/ns_svs.png" alt="NS SVS Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-SVS dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/wave_c_sines.png" alt="Wave C Sines Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample Wave-C-Sines dataset.</h2>
+        </div>
+        <div class="item">
+          <img src="static/images/vis/wave_layer.png" alt="Wave Layer Visualization"/>
+          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured Wave-Layer dataset.</h2>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section hero is-light" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title has-text-centered">BibTeX</h2>
+      <pre><code>@article{wen2025gaot,
+  title        = {Geometry Aware Operator Transformer as an Efficient and Accurate Neural Surrogate for PDEs on Arbitrary Domains},
+  author       = {Wen, Shizheng and Kumbhat, Arsh and Lingsch, Levi and Mousavi, Sepehr and Chandrashekar, Praveen and Mishra, Siddhartha},
+  journal      = {arXiv preprint arXiv:wait}, 
+  year         = {2025}
+}</code></pre>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+              You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+              Commons Attribution-ShareAlike 4.0 International License</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
