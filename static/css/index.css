@@ -152,7 +152,7 @@ body {
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.arrow-container {
+/* .arrow-container {
     position: absolute;
     bottom: 20px;
     left: 50%;
@@ -178,8 +178,7 @@ body {
     60% {
         transform: translateY(-10px) rotate(45deg);
     }
-}
-
+} */
 
 .table-container {
     margin: 1rem 0;
