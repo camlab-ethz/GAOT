@@ -564,7 +564,6 @@
   </footer>
 
   <script>
-    // 可视化描述文本
     const visualizationDescriptions = {
       'static/images/vis/poisson_c_sines.png': 'Model input, ground-truth solution, and model estimate of a test sample of the Poisson-C-Sines dataset.',
       'static/images/vis/poisson_gauss.png': 'Model input, ground-truth solution, and model estimate of a test sample of the Poisson-Gauss dataset.',
@@ -597,15 +596,13 @@
           img.alt = this.options[this.selectedIndex].text;
           caption.innerHTML = visualizationDescriptions[selectedValue];
           
-          // 重新渲染数学公式
           if (typeof MathJax !== 'undefined') {
             MathJax.typeset([caption]);
           }
         }
       });
 
-      // 设置默认选项
-      select.value = 'static/images/vis/ce_gauss.png';
+      select.value = 'static/images/vis/poisson_c_sines.png';
       select.dispatchEvent(new Event('change'));
     });
   </script>
