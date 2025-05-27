@@ -52,18 +52,19 @@
 </head>
 <body>
 
-  <section class="hero">
+  <section class="hero is-fullheight">
     <div class="hero-body">
       <div class="container is-max-desktop">
         <div class="columns is-centered">
           <div class="column has-text-centered">
-            <h1 class="title is-1 publication-title">Geometry Aware Operator Transformer as an Efficient and Accurate Neural Surrogate for PDEs on Arbitrary Domains</h1>
+            <h1 class="title is-1 publication-title">🐐 Geometry Aware Operator Transformer as an Efficient and Accurate Neural Surrogate for PDEs on Arbitrary Domains</h1>
             <div class="is-size-5 publication-authors">
               <span class="author-block"><a href="https://shizheng-wen.github.io/" target="_blank">Shizheng Wen</a><sup>1</sup>,</span>
               <span class="author-block"><a href="https://arsh-k.github.io/webpage/" target="_blank">Arsh Kumbhat</a><sup>1</sup>,</span>
               <span class="author-block"><a href="https://scholar.google.com/citations?user=9pJIGJUAAAAJ&hl=en" target="_blank">Levi Lingsch</a><sup>1,2</sup>,</span>
               <span class="author-block"><a href="https://scholar.google.com/citations?hl=en&user=gsgiQ0wAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Sepehr Mousavi</a><sup>1,3</sup>,</span>
-              <span class="author-block"><a href="https://cpraveen.github.io/" target="_blank">Praveen Chandrashekar</a><sup>4</sup>,</span>
+              <span class="author-block"><a href="https://scholar.google.com/citations?user=nVKRaf4AAAAJ&hl=en" target="_blank">Yizhou Zhao</a><sup>4</sup>,</span>
+              <span class="author-block"><a href="https://cpraveen.github.io/" target="_blank">Praveen Chandrashekar</a><sup>5</sup>,</span>
               <span class="author-block"><a href="https://camlab.ethz.ch/the-group/people.html?u=smishra" target="_blank">Siddhartha Mishra</a><sup>1,2</sup></span>
             </div>
 
@@ -71,7 +72,8 @@
               <span class="author-block"><sup>1</sup>Seminar for Applied Mathematics, ETH Zurich, Switzerland</span><br>
               <span class="author-block"><sup>2</sup>ETH AI Center, Zurich, Switzerland</span><br>
               <span class="author-block"><sup>3</sup>Department of Mechanical and Process Engineering, ETH Zurich, Switzerland</span><br>
-              <span class="author-block"><sup>4</sup>Centre for Applicable Mathematics, TIFR, India</span>
+              <span class="author-block"><sup>4</sup>School of Computer Science, CMU, USA</span><br>
+              <span class="author-block"><sup>5</sup>Centre for Applicable Mathematics, TIFR, India</span>
             </div>
 
             <div class="column has-text-centered">
@@ -89,7 +91,7 @@
                   </a>
                 </span>
                 <span class="link-block">
-                  <a href="https://arxiv.org/abs/YOUR_ARXIV_ID_HERE" target="_blank" class="external-link button is-normal is-rounded is-dark"> 
+                  <a href="https://arxiv.org/abs/2505.18781" target="_blank" class="external-link button is-normal is-rounded is-dark"> 
                     <span class="icon"><i class="ai ai-arxiv"></i></span>
                     <span>arXiv</span>
                   </a>
@@ -101,6 +103,9 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="arrow-container">
+        <div class="arrow"></div>
       </div>
     </div>
   </section>
@@ -160,14 +165,322 @@
           </div>
         </div>
       </div>
-      <div id="accuracy-carousel" class="carousel results-carousel">
+      <div id="accuracy-carousel" class="carousel results-carousel table-carousel">
         <div class="item">
-          <img src="static/images/accuracy.png" alt="Accuracy Result 1"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;"></h2>
+          <div class="table-container">
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+              <caption>Table 1: Benchmark results on time-dependent and time-independent datasets with irregular grid inputs. Best and 2nd best models are shown in <span class="rank-one">blue</span> and <span class="rank-two">orange</span> fonts for each dataset.</caption>
+              <thead>
+                <tr>
+                  <th>Dataset</th>
+                  <th colspan="6">Median relative L¹ error [%]</th>
+                </tr>
+                <tr>
+                  <th>Time-Independent</th>
+                  <th>GAOT</th>
+                  <th>RIGNO-18</th>
+                  <th>Transolver</th>
+                  <th>GNOT</th>
+                  <th>UPT</th>
+                  <th>GINO</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Poisson-C-Sines</td>
+                  <td class="rank-one">3.10</td>
+                  <td class="rank-two">6.83</td>
+                  <td>77.3</td>
+                  <td>100</td>
+                  <td>100</td>
+                  <td>20.0</td>
+                </tr>
+                <tr>
+                  <td>Poisson-Gauss</td>
+                  <td class="rank-one">0.83</td>
+                  <td>2.26</td>
+                  <td class="rank-two">2.02</td>
+                  <td>88.9</td>
+                  <td>48.4</td>
+                  <td>7.57</td>
+                </tr>
+                <tr>
+                  <td>Elasticity</td>
+                  <td class="rank-one">1.34</td>
+                  <td class="rank-two">4.31</td>
+                  <td>4.92</td>
+                  <td>10.4</td>
+                  <td>12.6</td>
+                  <td>4.38</td>
+                </tr>
+                <tr>
+                  <td>NACA0012</td>
+                  <td class="rank-two">6.81</td>
+                  <td class="rank-one">5.30</td>
+                  <td>8.69</td>
+                  <td>6.89</td>
+                  <td>16.1</td>
+                  <td>9.01</td>
+                </tr>
+                <tr>
+                  <td>NACA2412</td>
+                  <td class="rank-one">6.66</td>
+                  <td class="rank-two">6.72</td>
+                  <td>8.51</td>
+                  <td>8.82</td>
+                  <td>17.9</td>
+                  <td>9.39</td>
+                </tr>
+                <tr>
+                  <td>RAE2822</td>
+                  <td>6.61</td>
+                  <td class="rank-two">5.06</td>
+                  <td class="rank-one">4.82</td>
+                  <td>7.15</td>
+                  <td>16.1</td>
+                  <td>8.61</td>
+                </tr>
+                <tr>
+                  <td>Bluff-Body</td>
+                  <td class="rank-two">2.25</td>
+                  <td>5.76</td>
+                  <td class="rank-one">1.78</td>
+                  <td>44.2</td>
+                  <td>5.81</td>
+                  <td>3.49</td>
+                </tr>
+              </tbody>
+              <thead>
+                <tr>
+                  <th>Time-Dependent</th>
+                  <th>GAOT</th>
+                  <th>RIGNO-18</th>
+                  <th>RIGNO-12</th>
+                  <th>GeoFNO</th>
+                  <th>FNO DSE</th>
+                  <th>GINO</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>NS-Gauss</td>
+                  <td class="rank-two">2.91</td>
+                  <td class="rank-one">2.29</td>
+                  <td>3.80</td>
+                  <td>41.1</td>
+                  <td>38.4</td>
+                  <td>13.1</td>
+                </tr>
+                <tr>
+                  <td>NS-PwC</td>
+                  <td class="rank-one">1.50</td>
+                  <td class="rank-two">1.58</td>
+                  <td>2.03</td>
+                  <td>26.0</td>
+                  <td>56.7</td>
+                  <td>5.85</td>
+                </tr>
+                <tr>
+                  <td>NS-SL</td>
+                  <td class="rank-one">1.21</td>
+                  <td class="rank-two">1.28</td>
+                  <td>1.91</td>
+                  <td>13.7</td>
+                  <td>22.6</td>
+                  <td>4.48</td>
+                </tr>
+                <tr>
+                  <td>NS-SVS</td>
+                  <td class="rank-one">0.46</td>
+                  <td class="rank-two">0.56</td>
+                  <td>0.73</td>
+                  <td>9.75</td>
+                  <td>26.0</td>
+                  <td>1.19</td>
+                </tr>
+                <tr>
+                  <td>CE-Gauss</td>
+                  <td class="rank-one">6.40</td>
+                  <td class="rank-two">6.90</td>
+                  <td>7.44</td>
+                  <td>42.1</td>
+                  <td>30.8</td>
+                  <td>25.1</td>
+                </tr>
+                <tr>
+                  <td>CE-RP</td>
+                  <td class="rank-two">5.97</td>
+                  <td class="rank-one">3.98</td>
+                  <td>4.92</td>
+                  <td>18.4</td>
+                  <td>27.7</td>
+                  <td>12.3</td>
+                </tr>
+                <tr>
+                  <td>Wave-Layer</td>
+                  <td class="rank-one">5.78</td>
+                  <td class="rank-two">6.77</td>
+                  <td>9.01</td>
+                  <td>11.1</td>
+                  <td>28.3</td>
+                  <td>19.2</td>
+                </tr>
+                <tr>
+                  <td>Wave-C-Sines</td>
+                  <td class="rank-one">4.65</td>
+                  <td class="rank-two">5.35</td>
+                  <td>6.25</td>
+                  <td>13.1</td>
+                  <td>5.52</td>
+                  <td>5.82</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
         <div class="item">
-          <img src="static/images/accuracy2.png" alt="Accuracy Result 3"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;"></h2>
+          <div class="table-container">
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+              <caption>Table 2: Benchmarks with time-dependent datasets with regular grid inputs. Best and 2nd best models are shown in <span class="rank-one">blue</span> and <span class="rank-two">orange</span> fonts for each dataset.</caption>
+              <thead>
+                <tr>
+                  <th>Dataset</th>
+                  <th colspan="6">Median relative L¹ error [%]</th>
+                </tr>
+                <tr>
+                  <th>Structured</th>
+                  <th>GAOT</th>
+                  <th>RIGNO-18</th>
+                  <th>RIGNO-12</th>
+                  <th>CNO</th>
+                  <th>scOT</th>
+                  <th>FNO</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>NS-Gauss</td>
+                  <td class="rank-one">2.29</td>
+                  <td class="rank-two">2.74</td>
+                  <td>3.78</td>
+                  <td>10.9</td>
+                  <td>2.92</td>
+                  <td>14.41</td>
+                </tr>
+                <tr>
+                  <td>NS-PwC</td>
+                  <td class="rank-two">1.23</td>
+                  <td class="rank-one">1.12</td>
+                  <td>1.82</td>
+                  <td>5.03</td>
+                  <td>7.12</td>
+                  <td>12.55</td>
+                </tr>
+                <tr>
+                  <td>NS-SL</td>
+                  <td class="rank-one">0.98</td>
+                  <td class="rank-two">1.13</td>
+                  <td>1.82</td>
+                  <td>2.12</td>
+                  <td>2.49</td>
+                  <td>2.08</td>
+                </tr>
+                <tr>
+                  <td>NS-SVS</td>
+                  <td class="rank-one">0.46</td>
+                  <td class="rank-two">0.56</td>
+                  <td>0.75</td>
+                  <td>0.70</td>
+                  <td>1.01</td>
+                  <td>7.52</td>
+                </tr>
+                <tr>
+                  <td>CE-Gauss</td>
+                  <td class="rank-one">5.28</td>
+                  <td class="rank-two">5.47</td>
+                  <td>7.56</td>
+                  <td>22.0</td>
+                  <td>9.44</td>
+                  <td>28.69</td>
+                </tr>
+                <tr>
+                  <td>CE-RP</td>
+                  <td>4.98</td>
+                  <td class="rank-one">3.49</td>
+                  <td class="rank-two">4.43</td>
+                  <td>18.4</td>
+                  <td>9.74</td>
+                  <td>38.48</td>
+                </tr>
+                <tr>
+                  <td>Wave-Layer</td>
+                  <td class="rank-one">5.40</td>
+                  <td class="rank-two">6.75</td>
+                  <td>8.97</td>
+                  <td>8.28</td>
+                  <td>13.44</td>
+                  <td>28.13</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="item">
+          <div class="table-container">
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+              <caption>Table 3: Error Metrics of MSE (×10⁻²) and Mean AE (×10⁻¹) for Pressure and Wall Shear Stress on the DrivAerNet++ Dataset.</caption>
+              <thead>
+                <tr>
+                  <th rowspan="2">Model</th>
+                  <th colspan="2">Pressure</th>
+                  <th colspan="2">Wall Shear Stress</th>
+                </tr>
+                <tr>
+                  <th>MSE</th>
+                  <th>Mean AE</th>
+                  <th>MSE</th>
+                  <th>Mean AE</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>GAOT</td>
+                  <td class="rank-one">4.9409</td>
+                  <td class="rank-one">1.1017</td>
+                  <td class="rank-one">8.7370</td>
+                  <td class="rank-one">1.5674</td>
+                </tr>
+                <tr>
+                  <td>FIGConvNet</td>
+                  <td class="rank-two">4.9900</td>
+                  <td class="rank-two">1.2200</td>
+                  <td>9.8600</td>
+                  <td>2.2200</td>
+                </tr>
+                <tr>
+                  <td>TripNet</td>
+                  <td>5.1400</td>
+                  <td>1.2500</td>
+                  <td class="rank-two">9.5200</td>
+                  <td class="rank-two">2.1500</td>
+                </tr>
+                <tr>
+                  <td>RegDGCNN</td>
+                  <td>8.2900</td>
+                  <td>1.6100</td>
+                  <td>13.8200</td>
+                  <td>3.6400</td>
+                </tr>
+                <tr>
+                  <td>GAOT (NeurField)</td>
+                  <td>12.0786</td>
+                  <td>1.7826</td>
+                  <td>22.9160</td>
+                  <td>2.5099</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -176,74 +489,45 @@
   <section class="section">
     <div class="container is-max-desktop">
       <h2 class="title is-3 has-text-centered">Visualization</h2>
-      <div id="visualization-carousel" class="carousel results-carousel">
-        <div class="item">
-          <img src="static/images/vis/ce_gauss.png" alt="CE Gauss Visualization" style="max-width: 70%; height: auto; margin-left: auto; margin-right: auto; display: block;"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured CE-Gauss dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/ce_rp.png" alt="CE RP Visualization" style="max-width: 70%; height: auto; margin-left: auto; margin-right: auto; display: block;"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured CE-RP dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/naca0012.png" alt="NACA0012"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate and point distribution of test samples of the NACA0012 dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/naca2412.png" alt="NACA2412"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate and point distribution of test samples of the NACA2412 dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/rae2822.png" alt="RAE2822"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate and point distribution of test samples of the RAE2822 dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/bluff_body.png" alt="Bluff Body"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate and point distribution of test samples of the Bluff-Body dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/poisson_c_sines.png" alt="Poisson C Sines Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, and model estimate of a test sample of the Poisson-C-Sines dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/poisson_gauss.png" alt="Poisson Gauss Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, and model estimate of a test sample of the Poisson-Gauss dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/elasticity.png" alt="Elasticity Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, and model estimate of a test sample of the Elasticity dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/pressure_comparison.png" alt="Pressure Comparison Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate of a test sample N_S_WWS_WM_172 of the surface pressure on the DrivAerNet++.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/wws.png" alt="WWS"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input, ground-truth solution, model estimate of a test sample N_S_WWS_WM_172 of the surface wall shear stress on the DrivAerNet++.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/ns_gauss.png" alt="NS Gauss Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-Gauss dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/ns_pwc.png" alt="NS PWC Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-PwC dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/ns_sl.png" alt="NS SL Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-SL dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/ns_svs.png" alt="NS SVS Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-SVS dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/wave_c_sines.png" alt="Wave C Sines Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample Wave-C-Sines dataset.</h2>
-        </div>
-        <div class="item">
-          <img src="static/images/vis/wave_layer.png" alt="Wave Layer Visualization"/>
-          <h2 class="subtitle has-text-centered" style="margin-top:0.5em;">Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured Wave-Layer dataset.</h2>
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <div class="content has-text-justified">
+            <p>Use the dropdown menu below to see visualizations of different test samples.</p>
+            <div class="field">
+              <div class="control">
+                <div class="select is-medium is-fullwidth">
+                  <select id="visualization-select">
+                    <option value="" disabled selected>Select a visualization</option>
+                    <optgroup label="Time-independent dataset">
+                      <option value="static/images/vis/poisson_c_sines.png">Poisson-C-Sines</option>
+                      <option value="static/images/vis/poisson_gauss.png">Poisson-Gauss</option>
+                      <option value="static/images/vis/elasticity.png">Elasticity</option>
+                      <option value="static/images/vis/naca0012.png">NACA0012</option>
+                      <option value="static/images/vis/naca2412.png">NACA2412</option>
+                      <option value="static/images/vis/rae2822.png">RAE2822</option>
+                      <option value="static/images/vis/bluff_body.png">Bluff-Body</option>
+                      <option value="static/images/vis/pressure_comparison.png">DrivAerNet++ Pressure</option>
+                      <option value="static/images/vis/wws.png">DrivAerNet++ Wall Shear Stress</option>
+                    </optgroup>
+                    <optgroup label="Time-dependent dataset">
+                      <option value="static/images/vis/ce_gauss.png">CE-Gauss</option>
+                      <option value="static/images/vis/ce_rp.png">CE-RP</option>
+                      <option value="static/images/vis/ns_gauss.png">NS-Gauss</option>
+                      <option value="static/images/vis/ns_pwc.png">NS-PwC</option>
+                      <option value="static/images/vis/ns_sl.png">NS-SL</option>
+                      <option value="static/images/vis/ns_svs.png">NS-SVS</option>
+                      <option value="static/images/vis/wave_c_sines.png">Wave-C-Sines</option>
+                      <option value="static/images/vis/wave_layer.png">Wave-Layer</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="visualization-container">
+              <img id="selected-visualization" src="" alt="Selected visualization" style="max-width: 100%; height: auto; margin: 0 auto; display: block;"/>
+              <p id="visualization-caption" class="has-text-centered" style="margin-top: 1rem;"></p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -254,9 +538,11 @@
       <h2 class="title has-text-centered">BibTeX</h2>
       <pre><code>@article{wen2025gaot,
   title        = {Geometry Aware Operator Transformer as an Efficient and Accurate Neural Surrogate for PDEs on Arbitrary Domains},
-  author       = {Wen, Shizheng and Kumbhat, Arsh and Lingsch, Levi and Mousavi, Sepehr and Chandrashekar, Praveen and Mishra, Siddhartha},
-  journal      = {arXiv preprint arXiv:wait}, 
-  year         = {2025}
+  author       = {Wen, Shizheng and Kumbhat, Arsh and Lingsch, Levi and Mousavi, Sepehr and Zhao, Yizhou and Chandrashekar, Praveen and Mishra, Siddhartha},
+  year         = {2025},
+  eprint       = {2505.18781},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.LG}
 }</code></pre>
     </div>
   </section>
@@ -268,7 +554,7 @@
           <div class="content">
             <p>
               This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
-              You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+               <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
               Commons Attribution-ShareAlike 4.0 International License</a>.
             </p>
           </div>
@@ -276,6 +562,53 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    // 可视化描述文本
+    const visualizationDescriptions = {
+      'static/images/vis/poisson_c_sines.png': 'Model input, ground-truth solution, and model estimate of a test sample of the Poisson-C-Sines dataset.',
+      'static/images/vis/poisson_gauss.png': 'Model input, ground-truth solution, and model estimate of a test sample of the Poisson-Gauss dataset.',
+      'static/images/vis/elasticity.png': 'Model input, ground-truth solution, and model estimate of a test sample of the Elasticity dataset.',
+      'static/images/vis/naca0012.png': 'Model input, ground-truth solution, model estimate and point distribution of test samples of the NACA0012 dataset.',
+      'static/images/vis/naca2412.png': 'Model input, ground-truth solution, model estimate and point distribution of test samples of the NACA2412 dataset.',
+      'static/images/vis/rae2822.png': 'Model input, ground-truth solution, model estimate and point distribution of test samples of the RAE2822 dataset.',
+      'static/images/vis/bluff_body.png': 'Model input, ground-truth solution, model estimate and point distribution of test samples of the Bluff-Body dataset.',
+      'static/images/vis/pressure_comparison.png': 'Model input, ground-truth solution, model estimate of a test sample N_S_WWS_WM_172 of the surface pressure on the DrivAerNet++.',
+      'static/images/vis/wws.png': 'Model input, ground-truth solution, model estimate of a test sample N_S_WWS_WM_172 of the surface wall shear stress on the DrivAerNet++.',
+      'static/images/vis/ce_gauss.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured CE-Gauss dataset.',
+      'static/images/vis/ce_rp.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured CE-RP dataset.',
+      'static/images/vis/ns_gauss.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-Gauss dataset.',
+      'static/images/vis/ns_pwc.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-PwC dataset.',
+      'static/images/vis/ns_sl.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-SL dataset.',
+      'static/images/vis/ns_svs.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-SVS dataset.',
+      'static/images/vis/wave_c_sines.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample Wave-C-Sines dataset.',
+      'static/images/vis/wave_layer.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured Wave-Layer dataset.'
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const select = document.getElementById('visualization-select');
+      const img = document.getElementById('selected-visualization');
+      const caption = document.getElementById('visualization-caption');
+
+      select.addEventListener('change', function() {
+        const selectedValue = this.value;
+        if (selectedValue) {
+          img.src = selectedValue;
+          img.alt = this.options[this.selectedIndex].text;
+          caption.innerHTML = visualizationDescriptions[selectedValue];
+          
+          // 重新渲染数学公式
+          if (typeof MathJax !== 'undefined') {
+            MathJax.typeset([caption]);
+          }
+        }
+      });
+
+      // 设置默认选项
+      select.value = 'static/images/vis/ce_gauss.png';
+      select.dispatchEvent(new Event('change'));
+    });
+  </script>
 
 </body>
 </html>
