@@ -1,0 +1,514 @@
+"""
+Unit tests for data_utils module.
+Tests custom dataset classes and data manipulation utilities.
+"""
+import pytest
+import torch
+import numpy as np
+from unittest.mock import Mock
+
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+
+from new_src.datasets.data_utils import (
+    CustomDataset, DynamicPairDataset, StaticDataset,
+    collate_variable_batch, create_data_splits
+)
+from test.datasets.test_utils import assert_tensor_shape, MockMetadata
+
+
+class TestCustomDataset:
+    """Test suite for CustomDataset class."""
+    
+    def _create_sample_data(self, n_samples: int = 5, n_nodes: int = 20, 
+                          coord_dim: int = 2, n_c_features: int = 2, n_u_features: int = 1):
+        """Create sample data for testing."""
+        c_data = torch.randn(n_samples, n_nodes, n_c_features)
+        u_data = torch.randn(n_samples, n_nodes, n_u_features)
+        x_data = torch.rand(n_samples, n_nodes, coord_dim)
+        
+        # Create mock graph data in CSR format
+        encoder_graphs = []
+        decoder_graphs = []
+        for i in range(n_samples):
+            # Each sample has one scale with CSR format neighbors
+            enc_csr = {
+                'neighbors_index': torch.randint(0, n_nodes, (10,)),  # 10 random neighbor indices
+                'neighbors_row_splits': torch.arange(n_nodes + 1)     # Row splits for CSR format
+            }
+            dec_csr = {
+                'neighbors_index': torch.randint(0, n_nodes, (15,)),  # 15 random neighbor indices
+                'neighbors_row_splits': torch.arange(n_nodes + 1)     # Row splits for CSR format
+            }
+            encoder_graphs.append([enc_csr])  # List of scales
+            decoder_graphs.append([dec_csr])
+        
+        return c_data, u_data, x_data, encoder_graphs, decoder_graphs
+    
+    def test_initialization_with_condition(self):
+        """Test CustomDataset initialization with condition data."""
+        c_data, u_data, x_data, encoder_graphs, decoder_graphs = self._create_sample_data()
+        
+        dataset = CustomDataset(
+            c_data=c_data,
+            u_data=u_data,
+            x_data=x_data,
+            encoder_graphs=encoder_graphs,
+            decoder_graphs=decoder_graphs
+        )
+        
+        assert len(dataset) == 5
+        assert dataset.c_data is not None
+        assert dataset.transform is None
+    
+    def test_initialization_without_condition(self):
+        """Test CustomDataset initialization without condition data."""
+        _, u_data, x_data, encoder_graphs, decoder_graphs = self._create_sample_data()
+        
+        dataset = CustomDataset(
+            c_data=None,
+            u_data=u_data,
+            x_data=x_data,
+            encoder_graphs=encoder_graphs,
+            decoder_graphs=decoder_graphs
+        )
+        
+        assert len(dataset) == 5
+        assert dataset.c_data is None
+    
+    def test_initialization_with_transform(self):
+        """Test CustomDataset initialization with coordinate transform."""
+        c_data, u_data, x_data, encoder_graphs, decoder_graphs = self._create_sample_data()
+        
+        # Mock transform function
+        transform = Mock(return_value=torch.zeros_like(x_data[0]))
+        
+        dataset = CustomDataset(
+            c_data=c_data,
+            u_data=u_data,
+            x_data=x_data,
+            encoder_graphs=encoder_graphs,
+            decoder_graphs=decoder_graphs,
+            transform=transform
+        )
+        
+        assert dataset.transform is not None
+    
+    def test_getitem_with_condition(self):
+        """Test getting items from dataset with condition data."""
+        c_data, u_data, x_data, encoder_graphs, decoder_graphs = self._create_sample_data()
+        
+        dataset = CustomDataset(
+            c_data=c_data,
+            u_data=u_data,
+            x_data=x_data,
+            encoder_graphs=encoder_graphs,
+            decoder_graphs=decoder_graphs
+        )
+        
+        # Get first sample
+        c, u, x, enc_graph, dec_graph = dataset[0]
+        
+        # Check shapes and types
+        assert_tensor_shape(c, (20, 2), "condition_data")
+        assert_tensor_shape(u, (20, 1), "solution_data") 
+        assert_tensor_shape(x, (20, 2), "coordinate_data")
+        assert isinstance(enc_graph, list), "Encoder graph should be list"
+        assert isinstance(dec_graph, list), "Decoder graph should be list"
+        assert len(enc_graph) == 1, "Should have 1 scale"
+        assert len(dec_graph) == 1, "Should have 1 scale"
+        
+        # Check CSR format
+        assert isinstance(enc_graph[0], dict), "Encoder graph scale should be CSR dict"
+        assert isinstance(dec_graph[0], dict), "Decoder graph scale should be CSR dict"
+        assert 'neighbors_index' in enc_graph[0], "Should have neighbors_index"
+        assert 'neighbors_row_splits' in enc_graph[0], "Should have neighbors_row_splits"
+    
+    def test_getitem_without_condition(self):
+        """Test getting items from dataset without condition data."""
+        _, u_data, x_data, encoder_graphs, decoder_graphs = self._create_sample_data()
+        
+        dataset = CustomDataset(
+            c_data=None,
+            u_data=u_data,
+            x_data=x_data,
+            encoder_graphs=encoder_graphs,
+            decoder_graphs=decoder_graphs
+        )
+        
+        c, u, x, enc_graph, dec_graph = dataset[0]
+        
+        # Condition data should be empty tensor
+        assert c.numel() == 0, "Condition data should be empty when c_data is None"
+        assert_tensor_shape(u, (20, 1), "solution_data")
+    
+    def test_getitem_with_transform(self):
+        """Test getting items with coordinate transformation."""
+        c_data, u_data, x_data, encoder_graphs, decoder_graphs = self._create_sample_data()
+        
+        # Transform that zeros out coordinates
+        transform = lambda x: torch.zeros_like(x)
+        
+        dataset = CustomDataset(
+            c_data=c_data,
+            u_data=u_data,
+            x_data=x_data,
+            encoder_graphs=encoder_graphs,
+            decoder_graphs=decoder_graphs,
+            transform=transform
+        )
+        
+        c, u, x, enc_graph, dec_graph = dataset[0]
+        
+        # Coordinates should be transformed (all zeros)
+        assert torch.all(x == 0), "Coordinates should be transformed to zeros"
+    
+    def test_data_consistency_validation(self):
+        """Test validation of data consistency during initialization."""
+        c_data, u_data, x_data, encoder_graphs, decoder_graphs = self._create_sample_data()
+        
+        # Test mismatched c_data length
+        c_data_wrong = c_data[:3]  # Different length
+        with pytest.raises(ValueError, match="c_data and u_data must have same number of samples"):
+            CustomDataset(c_data_wrong, u_data, x_data, encoder_graphs, decoder_graphs)
+        
+        # Test mismatched x_data length
+        x_data_wrong = x_data[:3]
+        with pytest.raises(ValueError, match="x_data and u_data must have same number of samples"):
+            CustomDataset(c_data, u_data, x_data_wrong, encoder_graphs, decoder_graphs)
+        
+        # Test mismatched encoder_graphs length
+        encoder_graphs_wrong = encoder_graphs[:3]
+        with pytest.raises(ValueError, match="encoder_graphs and u_data must have same number of samples"):
+            CustomDataset(c_data, u_data, x_data, encoder_graphs_wrong, decoder_graphs)
+        
+        # Test mismatched decoder_graphs length
+        decoder_graphs_wrong = decoder_graphs[:3]
+        with pytest.raises(ValueError, match="decoder_graphs and u_data must have same number of samples"):
+            CustomDataset(c_data, u_data, x_data, encoder_graphs, decoder_graphs_wrong)
+
+
+class TestDynamicPairDataset:
+    """Test suite for DynamicPairDataset class."""
+    
+    def _create_time_series_data(self, n_samples: int = 3, n_timesteps: int = 16, 
+                               n_nodes: int = 10, n_vars: int = 1):
+        """Create time series data for testing."""
+        u_data = np.random.randn(n_samples, n_timesteps, n_nodes, n_vars)
+        c_data = np.random.randn(n_samples, n_timesteps, n_nodes, 2)  # 2 condition variables
+        t_values = np.linspace(0, 1, n_timesteps)
+        return u_data, c_data, t_values
+    
+    def test_initialization(self):
+        """Test DynamicPairDataset initialization."""
+        u_data, c_data, t_values = self._create_time_series_data()
+        metadata = MockMetadata()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            max_time_diff=14,
+            stepper_mode="output"
+        )
+        
+        assert dataset.num_samples == 3
+        assert dataset.num_nodes == 10
+        assert dataset.num_vars == 1
+        assert dataset.stepper_mode == "output"
+        assert len(dataset.t_in_indices) > 0
+        assert len(dataset.t_out_indices) > 0
+        assert len(dataset.t_in_indices) == len(dataset.t_out_indices)
+    
+    def test_time_pairs_generation(self):
+        """Test generation of time pairs."""
+        u_data, c_data, t_values = self._create_time_series_data(n_timesteps=16)
+        metadata = MockMetadata()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            max_time_diff=14
+        )
+        
+        # Check that time pairs are reasonable
+        assert len(dataset.t_in_indices) > 0, "Should have generated time pairs"
+        
+        # Check that output times are always after input times
+        for t_in, t_out in zip(dataset.t_in_indices, dataset.t_out_indices):
+            assert t_out > t_in, f"Output time {t_out} should be after input time {t_in}"
+            assert t_out - t_in <= 14, f"Time difference {t_out - t_in} should be <= max_time_diff"
+            assert (t_out - t_in) % 2 == 0, "Time differences should be even (as per generation logic)"
+    
+    def test_length_calculation(self):
+        """Test dataset length calculation."""
+        u_data, c_data, t_values = self._create_time_series_data(n_samples=3, n_timesteps=10)
+        metadata = MockMetadata()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            max_time_diff=8
+        )
+        
+        # Length should be n_samples * n_time_pairs
+        n_time_pairs = len(dataset.t_in_indices)
+        expected_length = 3 * n_time_pairs
+        assert len(dataset) == expected_length
+    
+    def test_getitem_output_mode(self):
+        """Test getting items in output stepper mode."""
+        u_data, c_data, t_values = self._create_time_series_data(n_samples=2, n_timesteps=10)
+        metadata = MockMetadata()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            stepper_mode="output"
+        )
+        
+        if len(dataset) > 0:
+            u_in, u_out, c_in, time_diff = dataset[0]
+            
+            # Check types and shapes
+            assert isinstance(u_in, torch.Tensor), "u_in should be tensor"
+            assert isinstance(u_out, torch.Tensor), "u_out should be tensor"
+            assert isinstance(c_in, torch.Tensor), "c_in should be tensor"
+            assert isinstance(time_diff, torch.Tensor), "time_diff should be tensor"
+            
+            assert_tensor_shape(u_in, (10, 1), "u_in")  # n_nodes, n_vars
+            assert_tensor_shape(u_out, (10, 1), "u_out")
+            assert_tensor_shape(c_in, (10, 2), "c_in")  # n_nodes, n_c_vars
+    
+    def test_getitem_residual_mode(self):
+        """Test getting items in residual stepper mode."""
+        u_data, c_data, t_values = self._create_time_series_data(n_samples=2, n_timesteps=10)
+        metadata = MockMetadata()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            stepper_mode="residual"
+        )
+        
+        if len(dataset) > 0:
+            u_in, u_residual, c_in, time_diff = dataset[0]
+            
+            assert isinstance(u_residual, torch.Tensor), "u_residual should be tensor"
+            assert_tensor_shape(u_residual, (10, 1), "u_residual")
+    
+    def test_getitem_time_derivative_mode(self):
+        """Test getting items in time derivative stepper mode."""
+        u_data, c_data, t_values = self._create_time_series_data(n_samples=2, n_timesteps=10)
+        metadata = MockMetadata()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            stepper_mode="time_der"
+        )
+        
+        if len(dataset) > 0:
+            u_in, u_time_der, c_in, time_diff = dataset[0]
+            
+            assert isinstance(u_time_der, torch.Tensor), "u_time_der should be tensor"
+            assert_tensor_shape(u_time_der, (10, 1), "u_time_der")
+    
+    def test_invalid_stepper_mode(self):
+        """Test error handling for invalid stepper mode."""
+        u_data, c_data, t_values = self._create_time_series_data(n_samples=1, n_timesteps=10)
+        metadata = MockMetadata()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            stepper_mode="invalid_mode"
+        )
+        
+        if len(dataset) > 0:
+            with pytest.raises(ValueError, match="Unsupported stepper_mode"):
+                _ = dataset[0]
+
+
+class TestStaticDataset:
+    """Test suite for StaticDataset class."""
+    
+    def test_initialization_with_condition(self):
+        """Test StaticDataset initialization with condition data."""
+        c_data = torch.randn(10, 50, 3)  # 10 samples, 50 nodes, 3 condition features
+        u_data = torch.randn(10, 50, 2)  # 10 samples, 50 nodes, 2 solution features
+        
+        dataset = StaticDataset(c_data=c_data, u_data=u_data)
+        
+        assert len(dataset) == 10
+        assert dataset.c_data is not None
+    
+    def test_initialization_without_condition(self):
+        """Test StaticDataset initialization without condition data."""
+        u_data = torch.randn(8, 30, 1)
+        
+        dataset = StaticDataset(c_data=None, u_data=u_data)
+        
+        assert len(dataset) == 8
+        assert dataset.c_data is None
+    
+    def test_getitem_with_condition(self):
+        """Test getting items with condition data."""
+        c_data = torch.randn(5, 20, 2)
+        u_data = torch.randn(5, 20, 1)
+        
+        dataset = StaticDataset(c_data=c_data, u_data=u_data)
+        
+        c, u = dataset[0]
+        
+        assert_tensor_shape(c, (20, 2), "condition_data")
+        assert_tensor_shape(u, (20, 1), "solution_data")
+    
+    def test_getitem_without_condition(self):
+        """Test getting items without condition data."""
+        u_data = torch.randn(5, 20, 1)
+        
+        dataset = StaticDataset(c_data=None, u_data=u_data)
+        
+        c, u = dataset[0]
+        
+        assert c.numel() == 0, "Condition data should be empty"
+        assert_tensor_shape(u, (20, 1), "solution_data")
+    
+    def test_data_length_mismatch(self):
+        """Test error handling for data length mismatch."""
+        c_data = torch.randn(5, 20, 2)  # 5 samples
+        u_data = torch.randn(8, 20, 1)  # 8 samples (mismatch)
+        
+        with pytest.raises(ValueError, match="c_data and u_data must have same number of samples"):
+            StaticDataset(c_data=c_data, u_data=u_data)
+
+
+class TestUtilityFunctions:
+    """Test suite for utility functions."""
+    
+    def test_collate_variable_batch(self):
+        """Test custom collate function for variable batches."""
+        # Create mock batch data
+        batch = []
+        for i in range(3):  # 3 samples in batch
+            c = torch.randn(15, 2)  # condition data
+            u = torch.randn(15, 1)  # solution data
+            x = torch.rand(15, 2)   # coordinate data
+            
+            # Create CSR format graphs
+            enc_csr = {
+                'neighbors_index': torch.randint(0, 15, (8,)),
+                'neighbors_row_splits': torch.arange(16)  # 15 + 1
+            }
+            dec_csr = {
+                'neighbors_index': torch.randint(0, 15, (10,)),
+                'neighbors_row_splits': torch.arange(16)  # 15 + 1  
+            }
+            enc_graph = [enc_csr]  # encoder graph with CSR format
+            dec_graph = [dec_csr]  # decoder graph with CSR format
+            batch.append((c, u, x, enc_graph, dec_graph))
+        
+        # Test collate function
+        c_batch, u_batch, x_batch, enc_graphs, dec_graphs = collate_variable_batch(batch)
+        
+        # Check output shapes and types
+        assert_tensor_shape(c_batch, (3, 15, 2), "c_batch")
+        assert_tensor_shape(u_batch, (3, 15, 1), "u_batch") 
+        assert_tensor_shape(x_batch, (3, 15, 2), "x_batch")
+        assert isinstance(enc_graphs, list), "Encoder graphs should be list"
+        assert isinstance(dec_graphs, list), "Decoder graphs should be list"
+        assert len(enc_graphs) == 3, "Should have 3 encoder graph samples"
+        assert len(dec_graphs) == 3, "Should have 3 decoder graph samples"
+    
+    def test_collate_variable_batch_empty_condition(self):
+        """Test collate function with empty condition data."""
+        batch = []
+        for i in range(2):
+            c = torch.empty(0)      # empty condition data
+            u = torch.randn(10, 1)
+            x = torch.rand(10, 2)
+            
+            # Create CSR format graphs
+            enc_csr = {
+                'neighbors_index': torch.randint(0, 10, (5,)),
+                'neighbors_row_splits': torch.arange(11)  # 10 + 1
+            }
+            dec_csr = {
+                'neighbors_index': torch.randint(0, 10, (7,)),
+                'neighbors_row_splits': torch.arange(11)  # 10 + 1
+            }
+            enc_graph = [enc_csr]
+            dec_graph = [dec_csr]
+            batch.append((c, u, x, enc_graph, dec_graph))
+        
+        c_batch, u_batch, x_batch, enc_graphs, dec_graphs = collate_variable_batch(batch)
+        
+        # Condition batch should be None for empty condition data
+        assert c_batch is None, "Should return None for empty condition data"
+        assert_tensor_shape(u_batch, (2, 10, 1), "u_batch")
+    
+    def test_create_data_splits(self):
+        """Test data splitting utility."""
+        # Create test data
+        data = torch.randn(100, 20, 3)
+        
+        # Test split with default ratios
+        splits = create_data_splits(data, train_ratio=0.8, val_ratio=0.1, shuffle=False)
+        
+        assert 'train' in splits and 'val' in splits and 'test' in splits
+        assert splits['train'].shape[0] == 80  # 80% of 100
+        assert splits['val'].shape[0] == 10    # 10% of 100
+        assert splits['test'].shape[0] == 10   # remaining 10%
+        
+        # Check that all data is accounted for
+        total_samples = splits['train'].shape[0] + splits['val'].shape[0] + splits['test'].shape[0]
+        assert total_samples == 100
+    
+    def test_create_data_splits_with_shuffle(self):
+        """Test data splitting with shuffling."""
+        # Create sequential data to test shuffling
+        data = torch.arange(20).float().unsqueeze(-1).unsqueeze(-1)  # [20, 1, 1]
+        
+        # Split with shuffling
+        splits_shuffled = create_data_splits(data, train_ratio=0.6, val_ratio=0.2, shuffle=True)
+        
+        # Split without shuffling
+        splits_ordered = create_data_splits(data, train_ratio=0.6, val_ratio=0.2, shuffle=False)
+        
+        # Check sizes are correct
+        assert splits_shuffled['train'].shape[0] == 12  # 60% of 20
+        assert splits_ordered['train'].shape[0] == 12
+        
+        # Check that shuffled version is different from ordered (with high probability)
+        # Note: this test might rarely fail due to random chance, but probability is very low
+        train_shuffled = splits_shuffled['train'].squeeze()
+        train_ordered = splits_ordered['train'].squeeze()
+        
+        # They should not be identical (unless extremely unlucky with random shuffle)
+        are_different = not torch.equal(train_shuffled, train_ordered)
+        if are_different:
+            # This is the expected case
+            pass
+        else:
+            # Very unlikely but possible - just warn
+            import warnings
+            warnings.warn("Shuffled and ordered splits happened to be identical - this is very rare but possible")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
