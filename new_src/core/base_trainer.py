@@ -12,8 +12,8 @@ from typing import Optional
 
 from .default_configs import SetUpConfig, ModelConfig, DatasetConfig, OptimizerConfig, PathConfig, merge_config
 from .trainer_utils import manual_seed, load_ckpt, save_ckpt
-from ..utils.optimizers import AdamOptimizer, AdamWOptimizer
 from ..datasets.dataset import DATASET_METADATA
+from ..utils.optimizers import AdamOptimizer, AdamWOptimizer
 
 
 class BaseTrainer(ABC):
@@ -170,27 +170,118 @@ class BaseTrainer(ABC):
         """Test the model and save results."""
         raise NotImplementedError("Subclasses must implement test()")
     
-    def save_checkpoint(self, epoch: int, loss: float, path: Optional[str] = None):
-        """Save model checkpoint."""
-        if path is None:
-            path = self.path_config.ckpt_path
-        
-        save_ckpt(
-            model=self.model,
-            optimizer=self.optimizer,
-            epoch=epoch,
-            loss=loss,
-            path=path
-        )
+    def to(self, device):
+        """Move model to device."""
+        self.model.to(device)
     
-    def load_checkpoint(self, path: Optional[str] = None):
-        """Load model checkpoint."""
-        if path is None:
-            path = self.path_config.ckpt_path
+    def type(self, dtype):
+        """Set model data type."""
+        self.model.type(dtype)
+
+    def load_ckpt(self):
+        """Load checkpoint from config path."""
+        load_ckpt(self.path_config.ckpt_path, model=self.model)
+        return self
+    
+    def save_ckpt(self):
+        """Save checkpoint to config path."""
+        os.makedirs(os.path.dirname(self.path_config.ckpt_path), exist_ok=True)
+        save_ckpt(self.path_config.ckpt_path, model=self.model)
+        return self
+
+    def compute_test_errors(self):
+        """Compute test errors (to be implemented by subclasses)."""
+        raise NotImplementedError
+
+    def fit(self, verbose=False):
+        """
+        Train the model with the original training loop.
+        This is the complete training logic from the original codebase.
+        """
+        self.to(self.device)
         
-        return load_ckpt(
-            model=self.model,
-            optimizer=self.optimizer,
-            path=path,
-            device=self.device
-        )
+        result = self.optimizer.optimize(self)
+        self.config.datarow['training time'] = result['time']
+        
+        self.save_ckpt()
+
+        if len(result['train']['loss']) == 0:
+            if self.setup_config.use_variance_test:
+                self.variance_test()
+            else:
+                self.test()
+        else:
+            kwargs = {
+                "epochs": result['train']['epoch'],
+                "losses": result['train']['loss']
+            }
+        
+            if "valid" in result:
+                kwargs['val_epochs'] = result['valid']['epoch']
+                kwargs['val_losses'] = result['valid']['loss']
+            
+            if "best" in result:
+                kwargs['best_epoch'] = result['best']['epoch']
+                kwargs['best_loss'] = result['best']['loss']
+            
+            self.plot_losses(**kwargs)
+
+            if self.setup_config.use_variance_test:
+                self.variance_test()
+            else:
+                self.test()
+
+    def plot_losses(self, epochs, losses, val_epochs=None, val_losses=None, 
+                   best_epoch=None, best_loss=None):
+        """Plot training and validation losses."""
+        import matplotlib.pyplot as plt
+        
+        if val_losses is None:
+            # plot only train loss
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.plot(epochs, losses)
+            ax.scatter([best_epoch], [best_loss], c='r', marker='o', label="best loss")
+            ax.set_xlabel('Epoch')
+            ax.set_ylabel('Loss')
+            ax.set_title('Loss vs Epoch')
+            ax.legend()
+            ax.set_xlim(left=0)
+            if (np.array(losses) > 0).all():
+                ax.set_yscale('log')
+            np.savez(self.path_config.loss_path[:-4] + ".npz", epochs=epochs, losses=losses)
+            plt.savefig(self.path_config.loss_path)
+        else:
+            # also plot valid loss
+            fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+            
+            ax[0].plot(epochs, losses)
+            ax[0].scatter([best_epoch], [best_loss], c='r', marker='o', label="best loss")
+            ax[0].set_xlabel('Epoch')
+            ax[0].set_ylabel('Loss')
+            ax[0].set_title('Loss vs Epoch')
+            ax[0].legend()
+            ax[0].set_xlim(left=0)
+            if (np.array(losses) > 0).all():
+                ax[0].set_yscale('log')
+
+            ax[1].plot(val_epochs, val_losses)
+            ax[1].set_xlabel('Epoch')
+            ax[1].set_ylabel('relative error')
+            ax[1].set_title('Loss vs relative error')
+            ax[1].legend()
+            ax[1].set_xlim(left=0)
+            if (np.array(val_losses) > 0).all():
+                ax[1].set_yscale('log')
+            
+            plt.savefig(self.path_config.loss_path)
+            np.savez(self.path_config.loss_path[:-4] + ".npz", 
+                    epochs=epochs, losses=losses, 
+                    val_epochs=val_epochs, val_losses=val_losses)
+
+    def plot_results(self):
+        """Plot results (to be implemented by subclasses)."""
+        raise NotImplementedError
+
+    def variance_test(self):
+        """Variance test (to be implemented by subclasses)."""
+        raise NotImplementedError

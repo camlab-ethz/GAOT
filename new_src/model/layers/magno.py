@@ -40,22 +40,22 @@ class MAGNOConfig:
     
     # --- Attention and Embedding ---
     use_attention: bool = True                              # Enable attention mechanism  
-    attention_type: Literal['cosine', 'dot_product'] = 'cosine'  # Attention type
-    use_geoembed: bool = False                              # Enable geometric embedding
-    embedding_method: Literal['statistical', 'pointnet'] = 'statistical'  # Geometric embedding method
-    pooling: Literal['max', 'mean', 'sum'] = 'max'          # Pooling for pointnet embedding
+    attention_type: str= 'cosine'                           # Attention type, support ['cosine', 'dot_product']
+    use_geoembed: bool = True                              # Enable geometric embedding
+    embedding_method: str = 'statistical'                   # Geometric embedding method, support ['statistical', 'pointnet']
+    pooling: str = 'max'                                    # Pooling for pointnet embedding, support ['max', 'mean', 'sum']
     
     # --- Transform and Sampling ---
-    transform_type: Literal['linear', 'nonlinear'] = 'linear'     # Transform type for both encoder and decoder
-    sampling_strategy: Optional[Literal['max_neighbors', 'ratio']] = None  # Edge sampling strategy
+    transform_type: str = 'linear'                          # Transform type for both encoder and decoder, support ['linear', 'nonlinear']
+    sampling_strategy: Optional[str] = None                 # Edge sampling strategy, support ['max_neighbors', 'ratio']
     max_neighbors: Optional[int] = None                     # Max neighbors for sampling
     sample_ratio: Optional[float] = None                    # Sample ratio for edge drop
     
     # --- Advanced ---
     node_embedding: bool = False                            # Use positional node embedding
-    neighbor_search_method: Literal['open3d', 'torch_cluster', 'grid', 'chunked', 'native'] = 'auto'  # Neighbor search method
+    neighbor_search_method: str = 'auto'                   # Neighbor search method, support ['open3d', 'torch_cluster', 'grid', 'chunked', 'native']
     use_torch_scatter: bool = True                          # Use torch_scatter backend
-    neighbor_strategy: Literal['radius', 'knn'] = 'radius'  # Neighbor search strategy
+    neighbor_strategy: str = 'radius'                      # Neighbor search strategy, support ['radius', 'knn']
     precompute_edges: bool = False                          # Whether edges are precomputed
     
     def __post_init__(self):

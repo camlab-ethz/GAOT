@@ -55,11 +55,11 @@ class GAOT(nn.Module):
         self.processor = self.init_processor(self.node_latent_size, config.args.transformer)
         self.decoder = self.init_decoder(output_size, self.node_latent_size, config.args.magno)
     
-    def init_encoder(self, input_size, latent_size, gno_config):
+    def init_encoder(self, input_size, latent_size, config):
         return MAGNOEncoder(
             in_channels=input_size,
             out_channels=latent_size,
-            gno_config=gno_config
+            config=config
         )
     
     def init_processor(self, node_latent_size, config):
@@ -81,11 +81,11 @@ class GAOT(nn.Module):
             config=config
         )
 
-    def init_decoder(self, output_size, latent_size, gno_config):
+    def init_decoder(self, output_size, latent_size, config):
         return MAGNODecoder(
             in_channels=latent_size,
             out_channels=output_size,
-            gno_config=gno_config
+            config=config
         )
 
     def _get_patch_positions(self):
