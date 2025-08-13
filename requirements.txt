@@ -8,5 +8,5 @@ matplotlib
 tqdm
 seaborn
 scikit-learn
-torch-scatter
 rotary-embedding-torch
+torch-geometric

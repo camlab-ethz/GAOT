@@ -5,7 +5,7 @@ This repository contains the official source code for the paper:
 
 For the implementation of large 3D datasets, e.g., DrivaerNet++, please refer to our other repository: [**GAOT-3D**](https://github.com/Shizheng-Wen/GAOT-3D).
 
-## :sparkles: Updates (2025)
+## :sparkles: Updates
 
 ***13/09/2025***
 1.  **Unified Architecture**: Complete refactoring with unified trainers supporting both 2D/3D coordinates and fixed/variable coordinate modes
@@ -78,6 +78,15 @@ GAOT shows excellent throughput and scalability with increasing grid resolution 
     pip install -r requirements.txt
     ```
     *Ensure PyTorch is installed according to your system's CUDA version if GPU support is needed.*
+    
+    For PyG-related packages (e.g., torch-scatter), run:
+    ```bash
+    pip install torch-scatter -f https://data.pyg.org/whl/torch-2.7.0+${CUDA}.html
+    pip install torch-cluster -f https://data.pyg.org/whl/torch-2.7.0+${CUDA}.html
+    ```
+    Replace ${CUDA} with your CUDA version (e.g., cu128, cu121 or cpu).
+
+
 
 
 ## :floppy_disk: Dataset Setup
