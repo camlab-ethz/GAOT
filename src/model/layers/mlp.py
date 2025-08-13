@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from dataclasses import dataclass
 from typing import Optional, Callable
 
-from src.utils.dataclass import shallow_asdict
+from .utils.dataclass import shallow_asdict
 
 
 ############
@@ -35,7 +35,7 @@ def activation_fn(name:str, activation_kwargs:dict = dict())->Callable:
         raise ValueError(f"Activation function {name} not found")
 
 ##############
-# MLP
+# MLPs
 ##############
 
 class MLP(nn.Module):
@@ -304,8 +304,10 @@ class ChannelMLP(nn.Module):
 
         return x
 
-# Reimplementation of the ChannelMLP class using Linear instead of Conv
 class LinearChannelMLP(torch.nn.Module):
+    """
+    Reimplementation of the ChannelMLP class using Linear instead of Conv
+    """
     def __init__(self, layers, non_linearity=F.gelu, dropout=0.0):
         super().__init__()
 

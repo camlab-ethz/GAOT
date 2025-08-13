@@ -28,9 +28,9 @@
     },
 
     "dataset": {
-        "name": "NS-Gauss",
-        "metaname": "incompressible_fluids/NS-Gauss",
-        "base_path": "/cluster/work/math/camlab-data/rigno-data/unstructured/",
+        "name": "CE-CRP",
+        "metaname": "compressible_flow/CE-CRP",
+        "base_path": "/cluster/work/math/camlab-data/graphnpde/pdegym/",
         "use_metadata_stats": false,
         "use_sparse": false,
         "train_size": 1024,
@@ -63,9 +63,9 @@
     },
 
     "path": {
-        "ckpt_path": ".ckpt/examples/time_dep/ns_gauss.pt",
-        "loss_path": ".loss/examples/time_dep/ns_gauss.png",
-        "result_path": ".results/examples/time_dep/ns_gauss.png",
-        "database_path": ".database/examples/time_dep/ns_gauss.csv"
+        "ckpt_path": ".ckpt/examples/time_dep/ce_crp.pt",
+        "loss_path": ".loss/examples/time_dep/ce_crp.png",
+        "result_path": ".results/examples/time_dep/ce_crp.png",
+        "database_path": ".database/examples/time_dep/ce_crp.csv"
     }
 }

@@ -11,18 +11,6 @@ def shallow_asdict(obj:Any)->dict:
         raise TypeError(f"Unsupported type for shallow_asdict: {type(obj)}")
     return obj
 
-# def safe_replace(obj:Any, **kwargs)->Any:
-#     if is_dataclass(obj):
-#         field_names = {f.name for f in fields(obj)}
-#         for key, value in kwargs.items():
-#             if key in field_names:
-#                 setattr(obj, key, value)
-#     elif isinstance(obj, DictConfig):
-#         return OmegaConf.merge(obj, OmegaConf.create(kwargs))
-#     else:
-#         raise TypeError(f"Unsupported type for safe_replace: {type(obj)}")
-#     return obj
-
 def safe_replace(obj: Any, **kwargs) -> Any:
     if is_dataclass(obj):
         field_names = {f.name for f in fields(obj)}

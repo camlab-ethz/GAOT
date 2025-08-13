@@ -3,7 +3,7 @@
         "seed": 42,
         "device": "cuda:0",
         "dtype": "torch.float32",
-        "trainer_name": "sequential",
+        "trainer_name": "static",
         "train": true,
         "test": false,
         "ckpt": false
@@ -28,23 +28,15 @@
     },
 
     "dataset": {
-        "name": "NS-Gauss",
-        "metaname": "incompressible_fluids/NS-Gauss",
+        "name": "Elasticity",
+        "metaname": "elliptic_pdes/Elasticity",
         "base_path": "/cluster/work/math/camlab-data/rigno-data/unstructured/",
-        "use_metadata_stats": false,
-        "use_sparse": false,
         "train_size": 1024,
         "val_size": 128,
-        "test_size":256,
-        "max_time_diff": 14,
-        "time_step": 2,
-        "coord_scaling": "global_scaling",
+        "test_size": 256,
         "batch_size": 64,
         "num_workers": 4,
-        "shuffle": true,
-        "metric": "final_step",
-        "predict_mode": "all",
-        "stepper_mode": "time_der"
+        "shuffle": true
     },
 
     "optimizer": {
@@ -52,7 +44,7 @@
         "args": {
             "lr": 8e-4,
             "weight_decay": 1e-05,
-            "epoch": 500,
+            "epoch": 1000,
             "loss_scale": 1.0,
             "eval_every_eps": 2,
             "scheduler": "mix",
@@ -63,9 +55,9 @@
     },
 
     "path": {
-        "ckpt_path": ".ckpt/examples/time_dep/ns_gauss.pt",
-        "loss_path": ".loss/examples/time_dep/ns_gauss.png",
-        "result_path": ".results/examples/time_dep/ns_gauss.png",
-        "database_path": ".database/examples/time_dep/ns_gauss.csv"
+        "ckpt_path": ".ckpt/examples/time_indep/elasticity.pt",
+        "loss_path": ".loss/examples/time_indep/elasticity.png",
+        "result_path": ".results/examples/time_indep/elasticity.png",
+        "database_path": ".database/examples/time_indep/elasticity.csv"
     }
 }

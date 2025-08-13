@@ -6,6 +6,7 @@ This module is a flexible implementation that can handle:
 - 2D and 3D coordinate spaces
 - Fixed coordinates (fx mode) and variable coordinates (vx mode) 
 - Efficient caching and neighbor computation
+- Edge drop/sampling
 """
 
 import torch

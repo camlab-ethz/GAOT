@@ -3,59 +3,33 @@
         "seed": 42,
         "device": "cuda:0",
         "dtype": "torch.float32",
-        "trainer_name": "static_fx",
+        "trainer_name": "static",
         "train": true,
         "test": false,
-        "ckpt": false,
-        "use_variance_test": false
+        "ckpt": false
     },
 
     "model": {
-        "name": "goat2d_fx",
+        "name": "goat",
         "latent_tokens_size": [64, 64],
         "args": {
             "magno": {
-                "gno_coord_dim": 2,
-                "gno_radius": 0.033,
-                "projection_channels": 256,
-                "in_gno_channel_mlp_hidden_layers": [64,64,64],
-                "out_gno_channel_mlp_hidden_layers": [64,64],
-                "lifting_channels": 32,
-                "use_attn": true,
-                "attention_type": "cosine",
-                "use_geoembed": false,
-                "embedding_method": "statistical",
-                "precompute_edges": false
+                "coord_dim": 2,
+                "radius": 0.033,
+                "hidden_size": 64,
+                "mlp_layers": 3,
+                "lifting_channels": 64
             },
             "transformer": {
                 "patch_size": 2,
-                "hidden_size": 256,
-                "use_attn_norm": true,
-                "use_ffn_norm": true,
-                "norm_eps": 1e-06,
-                "num_layers": 5,
-                "positional_embedding": "rope",
-                 "use_long_range_skip": true,
-                "attn_config": {
-                    "hidden_size": 256,
-                    "num_heads": 8,
-                    "num_kv_heads": 8,
-                    "use_conditional_norm": false,
-                    "cond_norm_hidden_size": 4,
-                    "atten_dropout": 0.2
-                },
-                "ffn_config": {
-                    "hidden_size": 1024,
-                    "use_conditional_norm": false,
-                    "cond_norm_hidden_size": 4
-                }
+                "hidden_size": 256
             }
         }
     },
 
     "dataset": {
         "name": "Poisson-Gauss",
-        "metaname": "rigno-unstructured/Poisson-Gauss",
+        "metaname": "elliptic_pdes/Poisson-Gauss",
         "base_path": "/cluster/work/math/camlab-data/rigno-data/unstructured/",
         "train_size": 2048,
         "val_size": 128,
@@ -81,9 +55,9 @@
     },
 
     "path": {
-        "ckpt_path": ".ckpt/time_indep/poisson_gauss.pt",
-        "loss_path": ".loss/time_indep/poisson_gauss.png",
-        "result_path": ".results/time_indep/poisson_gauss.png",
-        "database_path": ".database/time_indep/poisson_gauss.csv"
+        "ckpt_path": ".ckpt/examples/time_indep/poisson_gauss.pt",
+        "loss_path": ".loss/examples/time_indep/poisson_gauss.png",
+        "result_path": ".results/examples/time_indep/poisson_gauss.png",
+        "database_path": ".database/examples/time_indep/poisson_gauss.csv"
     }
 }

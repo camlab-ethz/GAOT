@@ -1,5 +1,10 @@
+"""
+Metrics computation utilities for GAOT.
+"""
 import torch
-from src.data.dataset import Metadata
+import numpy as np
+from typing import Dict, List, Optional, Union
+from src.datasets.dataset import Metadata
 
 EPSILON = 1e-10
 
@@ -51,7 +56,7 @@ def compute_batch_errors(gtr: torch.Tensor, prd: torch.Tensor, metadata: Metadat
     relative_error_per_chunk = error_per_chunk / (gtr_sum_per_chunk + EPSILON) # Shape: [batch_size, num_chunks]
 
     return relative_error_per_chunk # Shape: [batch_size, num_chunks]
-    
+
 def compute_final_metric(all_relative_errors: torch.Tensor) -> float:
     """
     Compute the final metric from the accumulated relative errors.

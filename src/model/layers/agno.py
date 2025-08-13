@@ -1,14 +1,9 @@
 """
 This file contains the implementation of the Attentional Graph Neural Operator (AGNO) module.
-It extends the traditional Graph Neural Operator (GNO) with attention mechanisms and neighbor sampling (edge drop) capabilities.
+It extends the traditional Graph Neural Operator (GNO) with attention mechanisms.
 
 Key Features:
 1. Attention Mechanism: Supports both cosine similarity and dot-product attention to weight neighbor contributions
-2. Edge Drop/Sampling: Implements neighbor sampling strategies during training for regularization and efficiency:
-   - Ratio sampling: Randomly keeps a fraction of edges
-   - Max neighbors: Limits the maximum number of neighbors per node
-3. Integral Transform: Computes various types of kernel integral transforms on graphs
-4. CSR Format: Efficiently handles sparse graphs using Compressed Sparse Row format
 
 Reference: https://github.com/neuraloperator/neuraloperator/blob/main/neuralop/layers/integral_transform.py
 """

@@ -5,6 +5,15 @@ This repository contains the official source code for the paper:
 
 For the implementation of large 3D datasets, e.g., DrivaerNet++, please refer to our other repository: [**GAOT-3D**](https://github.com/Shizheng-Wen/GAOT-3D).
 
+## :sparkles: Updates (2025)
+
+***13/09/2025***
+1.  **Unified Architecture**: Complete refactoring with unified trainers supporting both 2D/3D coordinates and fixed/variable coordinate modes
+2. **Sequential Data Support**: New comprehensive support for time-dependent datasets with autoregressive prediction
+3. **Streamlined API**: Simplified configuration system with automatic coordinate mode detection
+4. **Better Performance**: Optimized data processing pipeline
+
+
 ## :bulb: Abstract
 
 Learning solution operators of PDEs on arbitrary domains accurately and efficiently is a critical yet challenging task in engineering and industrial simulations. While numerous operator learning algorithms exist, a trade-off often arises between accuracy and computational efficiency. This work introduces the Geometry-Aware Operator Transformer (GAOT) to address this gap. GAOT integrates novel multiscale attentional graph neural operator encoders and decoders with geometry embeddings and (vision) transformer processors. This combination allows GAOT to accurately map domain information and input parameters to robust approximations of PDE solutions. Furthermore, several implementation innovations ensure GAOT's computational efficiency and scalability. We demonstrate significant gains in both accuracy and efficiency over various baselines across a diverse set of PDE learning tasks, including achieving state-of-the-art performance on a large-scale three-dimensional industrial CFD dataset.
@@ -99,23 +108,26 @@ All experiment parameters are managed via configuration files (JSON or TOML form
 * **`setup.test`**: Set to `true` for testing/inference (typically used when `setup.train: false`).
 * **`path`**: Defines storage locations for checkpoints, loss plots, result visualizations, and the metrics database.
 
-For a comprehensive list of all configuration options and their default values, please consult: `src/trainer/utils/default_set.py`.
+For a comprehensive list of all configuration options and their default values, please consult: `src/core/default_configs.py`.
 
 #### Model and Trainer Selection
 
-GAOT supports various model and trainer types to handle different PDE problem characteristics. Specify these in your configuration file:
+**Updated Unified System** - GAOT now uses a simplified, unified trainer system with automatic coordinate mode detection:
 
 * **Trainer Selection (`setup.trainer_name`):**
-    * `static_fx`: For time-independent datasets where the geometry (coordinates) is fixed (identical) across all data samples.
-    * `static_vx`: For time-independent datasets where the geometry (coordinates) is variable (differs) across data samples.
-    * `sequential_fx`: For time-dependent datasets where the geometry (coordinates) is fixed across all data samples and time steps.
+    * **`static`**: Unified trainer for time-independent datasets (automatically detects fx/vx coordinate mode)
+    * **`sequential`**: Unified trainer for time-dependent datasets with autoregressive prediction capabilities
+
 * **Model Selection (`model.name`):**
-    * `goat2d_fx`: A 2D GAOT model optimized for datasets with fixed geometry.
-    * `goat2d_vx`: A 2D GAOT model designed for datasets with variable geometry.
+    * **`gaot`**: Unified GAOT model supporting both 2D/3D coordinates and fx/vx modes
 
-Choose the `trainer_name` and `model.name` that best match your dataset and problem type. Default settings are available in `src/trainer/utils/default_set.py`.
+**Sequential Data Configuration** (for `sequential` trainer):
+* **`dataset.max_time_diff`**: Maximum time steps for sequential training (default: 14)
+* **`dataset.stepper_mode`**: Prediction mode - `"output"`, `"residual"`, or `"time_der"` (default: "output")
+* **`dataset.predict_mode`**: Testing mode - `"autoregressive"`, `"direct"`, `"star"`, or `"all"` (default: "autoregressive")
+* **`dataset.metric`**: Evaluation metric - `"final_step"` or `"all_step"` (default: "final_step")
 
-Example configurations can be found in the `config/examples/` directory.
+The system automatically detects coordinate mode (fixed/variable) from your data, eliminating the need for manual specification. Example configurations can be found in the `config/examples/` directory.
 
 ### Training
 
@@ -157,17 +169,42 @@ To perform inference with a trained model:
 GAOT/
 ├── assets/                   # Images for README (e.g., architecture.png)
 ├── config/                   # Experiment configuration files (.json, .toml)
-│   └── examples/             # Example configurations
+│   └── examples/             # Example configurations for different datasets
+│       ├── time_indep/       # Time-independent problem configurations
+│       └── time_dep/         # Time-dependent problem configurations
 ├── demo/                     # Jupyter notebooks, analysis scripts
-├── src/                      # Source code
-│   ├── data/                 # Data loading functionalities (dataset.py)
-│   ├── model/                # Model definitions (e.g., goat2d_fx.py, layers/)
-│   ├── trainer/              # Training, evaluation, optimizers, and utilities (default_set.py)
-│   └── utils/                # General utility functions
+├── src/                      # Refactored source code (unified architecture)
+│   ├── core/                 # Base trainer classes and configuration management
+│   │   ├── base_trainer.py   # Abstract base trainer class
+│   │   ├── default_configs.py # Default configuration dataclasses
+│   │   └── trainer_utils.py  # Shared trainer utilities
+│   ├── datasets/             # Unified data processing and graph building
+│   │   ├── data_processor.py # Base data processor for all modes
+│   │   ├── sequential_data_processor.py # Specialized for time-dependent data
+│   │   ├── graph_builder.py  # Graph construction utilities
+│   │   └── data_utils.py     # Dataset classes and utilities
+│   ├── model/                # Unified model definitions
+│   │   ├── gaot.py          # Main GAOT model (supports 2D/3D, fx/vx)
+│   │   └── layers/          # Neural network layer implementations
+│   ├── trainer/              # Unified trainer implementations
+│   │   ├── static_trainer.py    # For time-independent problems
+│   │   └── sequential_trainer.py # For time-dependent problems
+│   └── utils/                # Utilities for metrics, plotting, scaling
+│       ├── metrics.py        # Error computation and evaluation
+│       ├── plotting.py       # Advanced plotting and animation
+│       └── scaling.py        # Coordinate normalization utilities
 ├── main.py                   # Main script to run experiments
 ├── requirements.txt          # Python package dependencies
 └── README.md                 # This file
 ```
+
+### Key Architecture Changes
+
+- **Unified Trainers**: Single `static` and `sequential` trainers that automatically handle both fx/vx coordinate modes
+- **Modular Design**: Clean separation between data processing, model definition, and training logic
+- **Enhanced Visualization**: Support for both static plots and animated sequences for time-dependent data
+- **Comprehensive Testing**: Full unit test coverage for reliable development and CI/CD
+- **Automatic Detection**: Coordinate mode (fx/vx) and data dimensionality (2D/3D) detected automatically
 
 ## :link: Citation
 If you use GAOT in your research, please cite our paper:

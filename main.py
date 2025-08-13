@@ -13,10 +13,8 @@ import subprocess
 import platform
 import torch.distributed as dist
 
-from src.trainer.stat import StaticTrainer_VX, StaticTrainer_FX
-from src.trainer.seq import SequentialTrainer_FX
-from new_src.trainer.static_trainer import StaticTrainer
-from new_src.trainer.sequential_trainer import SequentialTrainer
+from src.trainer.static_trainer import StaticTrainer
+from src.trainer.sequential_trainer import SequentialTrainer
 
 class FileParser:
     def __init__(self, filename):
@@ -100,11 +98,8 @@ def run_arg(arg):
     arg = prepare_arg(arg)
 
     Trainer = {
-        "static_fx": StaticTrainer_FX,
-        "static_vx": StaticTrainer_VX,
-        "sequential_fx": SequentialTrainer_FX,
-        "static": StaticTrainer,  # New unified static trainer
-        "sequential": SequentialTrainer,  # New unified sequential trainer
+        "static": StaticTrainer,  
+        "sequential": SequentialTrainer,  
     }[arg.setup["trainer_name"]]
     t = Trainer(arg)
     if arg.setup["train"]:

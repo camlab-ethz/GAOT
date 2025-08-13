@@ -15,9 +15,8 @@ class Activation(nn.Module):
     """
     def __init__(self, activation:str):
         super().__init__()
-        activation = activation.lower() # prevent potential typo
+        activation = activation.lower()
         if activation in ['sigmoid', 'tanh']:
-            # prevent potential warning message
             self.activation_fn = getattr(torch, activation)
         elif activation == "swish":
             self.beta = nn.Parameter(torch.ones(1), requires_grad=True)
