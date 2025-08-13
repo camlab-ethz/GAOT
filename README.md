@@ -3,7 +3,7 @@
 This repository contains the official source code for the paper:
 **"Geometry Aware Operator Transformer As An Efficient And Accurate Neural Surrogate For PDEs On Arbitrary Domains"** 
 
-For the implementation of large 3D datasets, e.g., DrivaerNet++, please refer to our other repository: [**GAOT-3D**](https://github.com/Shizheng-Wen/GAOT-3D).
+For the optimized optimization for ultra-large 3D datasets with varying resolution of every data point, e.g., DrivaerNet++, DrivaerML and NASA CRM, please refer to our other repository: [**GAOT3D**](https://github.com/Shizheng-Wen/GAOT-3D).
 
 ## :sparkles: Updates
 
