@@ -12,8 +12,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 from new_src.datasets.data_utils import (
-    CustomDataset, DynamicPairDataset, StaticDataset,
-    collate_variable_batch, create_data_splits
+    CustomDataset, DynamicPairDataset, StaticDataset, TestDataset,
+    collate_variable_batch, collate_sequential_batch, create_data_splits
 )
 from test.datasets.test_utils import assert_tensor_shape, MockMetadata
 
@@ -195,15 +195,28 @@ class TestDynamicPairDataset:
     def _create_time_series_data(self, n_samples: int = 3, n_timesteps: int = 16, 
                                n_nodes: int = 10, n_vars: int = 1):
         """Create time series data for testing."""
+        np.random.seed(42)  # For reproducible tests
         u_data = np.random.randn(n_samples, n_timesteps, n_nodes, n_vars)
         c_data = np.random.randn(n_samples, n_timesteps, n_nodes, 2)  # 2 condition variables
         t_values = np.linspace(0, 1, n_timesteps)
         return u_data, c_data, t_values
     
+    def _create_mock_stats(self):
+        """Create mock statistics for testing."""
+        return {
+            'u': {'mean': np.array([0.1]), 'std': np.array([1.0])},
+            'c': {'mean': np.array([0.05, -0.1]), 'std': np.array([0.8, 0.9])},
+            'start_time': {'mean': 0.3, 'std': 0.2},
+            'time_diffs': {'mean': 0.15, 'std': 0.05},
+            'res': {'mean': 0.05, 'std': 0.02},
+            'der': {'mean': 0.02, 'std': 0.01}
+        }
+    
     def test_initialization(self):
         """Test DynamicPairDataset initialization."""
         u_data, c_data, t_values = self._create_time_series_data()
         metadata = MockMetadata()
+        stats = self._create_mock_stats()
         
         dataset = DynamicPairDataset(
             u_data=u_data,
@@ -211,7 +224,8 @@ class TestDynamicPairDataset:
             t_values=t_values,
             metadata=metadata,
             max_time_diff=14,
-            stepper_mode="output"
+            stepper_mode="output",
+            stats=stats
         )
         
         assert dataset.num_samples == 3
@@ -221,6 +235,8 @@ class TestDynamicPairDataset:
         assert len(dataset.t_in_indices) > 0
         assert len(dataset.t_out_indices) > 0
         assert len(dataset.t_in_indices) == len(dataset.t_out_indices)
+        assert hasattr(dataset, 'start_time_expanded')
+        assert hasattr(dataset, 'time_diff_expanded')
     
     def test_time_pairs_generation(self):
         """Test generation of time pairs."""
@@ -234,7 +250,7 @@ class TestDynamicPairDataset:
             metadata=metadata,
             max_time_diff=14
         )
-        
+
         # Check that time pairs are reasonable
         assert len(dataset.t_in_indices) > 0, "Should have generated time pairs"
         
@@ -266,65 +282,77 @@ class TestDynamicPairDataset:
         """Test getting items in output stepper mode."""
         u_data, c_data, t_values = self._create_time_series_data(n_samples=2, n_timesteps=10)
         metadata = MockMetadata()
+        stats = self._create_mock_stats()
         
         dataset = DynamicPairDataset(
             u_data=u_data,
             c_data=c_data,
             t_values=t_values,
             metadata=metadata,
-            stepper_mode="output"
+            stepper_mode="output",
+            stats=stats
         )
         
         if len(dataset) > 0:
-            u_in, u_out, c_in, time_diff = dataset[0]
+            input_tensor, target_tensor = dataset[0]
+            # Check types and shapes for new implementation
+            assert isinstance(input_tensor, torch.Tensor), "input_tensor should be tensor"
+            assert isinstance(target_tensor, torch.Tensor), "target_tensor should be tensor"
             
-            # Check types and shapes
-            assert isinstance(u_in, torch.Tensor), "u_in should be tensor"
-            assert isinstance(u_out, torch.Tensor), "u_out should be tensor"
-            assert isinstance(c_in, torch.Tensor), "c_in should be tensor"
-            assert isinstance(time_diff, torch.Tensor), "time_diff should be tensor"
-            
-            assert_tensor_shape(u_in, (10, 1), "u_in")  # n_nodes, n_vars
-            assert_tensor_shape(u_out, (10, 1), "u_out")
-            assert_tensor_shape(c_in, (10, 2), "c_in")  # n_nodes, n_c_vars
+            # Input tensor should contain: u_features + c_features + time_features(2)
+            expected_input_dim = 1 + 2 + 2  # u_vars + c_vars + time features
+            assert_tensor_shape(input_tensor, (10, expected_input_dim), "input_tensor")
+            assert_tensor_shape(target_tensor, (10, 1), "target_tensor")  # u_vars
     
     def test_getitem_residual_mode(self):
         """Test getting items in residual stepper mode."""
         u_data, c_data, t_values = self._create_time_series_data(n_samples=2, n_timesteps=10)
         metadata = MockMetadata()
+        stats = self._create_mock_stats()
         
         dataset = DynamicPairDataset(
             u_data=u_data,
             c_data=c_data,
             t_values=t_values,
             metadata=metadata,
-            stepper_mode="residual"
+            stepper_mode="residual",
+            stats=stats
         )
         
         if len(dataset) > 0:
-            u_in, u_residual, c_in, time_diff = dataset[0]
+            input_tensor, target_tensor = dataset[0]
             
-            assert isinstance(u_residual, torch.Tensor), "u_residual should be tensor"
-            assert_tensor_shape(u_residual, (10, 1), "u_residual")
+            assert isinstance(input_tensor, torch.Tensor), "input_tensor should be tensor"
+            assert isinstance(target_tensor, torch.Tensor), "target_tensor should be tensor"
+            
+            expected_input_dim = 1 + 2 + 2  # u_vars + c_vars + time features
+            assert_tensor_shape(input_tensor, (10, expected_input_dim), "input_tensor")
+            assert_tensor_shape(target_tensor, (10, 1), "target_tensor")
     
     def test_getitem_time_derivative_mode(self):
         """Test getting items in time derivative stepper mode."""
         u_data, c_data, t_values = self._create_time_series_data(n_samples=2, n_timesteps=10)
         metadata = MockMetadata()
+        stats = self._create_mock_stats()
         
         dataset = DynamicPairDataset(
             u_data=u_data,
             c_data=c_data,
             t_values=t_values,
             metadata=metadata,
-            stepper_mode="time_der"
+            stepper_mode="time_der",
+            stats=stats
         )
         
         if len(dataset) > 0:
-            u_in, u_time_der, c_in, time_diff = dataset[0]
+            input_tensor, target_tensor = dataset[0]
             
-            assert isinstance(u_time_der, torch.Tensor), "u_time_der should be tensor"
-            assert_tensor_shape(u_time_der, (10, 1), "u_time_der")
+            assert isinstance(input_tensor, torch.Tensor), "input_tensor should be tensor"
+            assert isinstance(target_tensor, torch.Tensor), "target_tensor should be tensor"
+            
+            expected_input_dim = 1 + 2 + 2  # u_vars + c_vars + time features
+            assert_tensor_shape(input_tensor, (10, expected_input_dim), "input_tensor")
+            assert_tensor_shape(target_tensor, (10, 1), "target_tensor")
     
     def test_invalid_stepper_mode(self):
         """Test error handling for invalid stepper mode."""
@@ -342,6 +370,54 @@ class TestDynamicPairDataset:
         if len(dataset) > 0:
             with pytest.raises(ValueError, match="Unsupported stepper_mode"):
                 _ = dataset[0]
+    
+    def test_variable_coordinates_mode(self):
+        """Test DynamicPairDataset with variable coordinates."""
+        u_data, c_data, t_values = self._create_time_series_data(n_samples=2, n_timesteps=8)
+        x_data = np.random.randn(2, 8, 10, 2)  # Variable coordinates
+        metadata = MockMetadata()
+        stats = self._create_mock_stats()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            x_data=x_data,
+            is_variable_coords=True,
+            stepper_mode="output",
+            stats=stats
+        )
+        
+        if len(dataset) > 0:
+            input_tensor, target_tensor, coord_tensor = dataset[0]
+            
+            assert isinstance(coord_tensor, torch.Tensor), "coord_tensor should be tensor"
+            assert_tensor_shape(coord_tensor, (10, 2), "coord_tensor")
+    
+    def test_time_feature_preprocessing(self):
+        """Test that time features are properly preprocessed."""
+        u_data, c_data, t_values = self._create_time_series_data(n_samples=1, n_timesteps=8)
+        metadata = MockMetadata()
+        stats = self._create_mock_stats()
+        
+        dataset = DynamicPairDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            stepper_mode="output",
+            stats=stats,
+            use_time_norm=True
+        )
+        
+        # Check that time features are preprocessed
+        assert hasattr(dataset, 'start_time_expanded')
+        assert hasattr(dataset, 'time_diff_expanded')
+        assert dataset.start_time_expanded.shape[1] == 10  # num_nodes
+        assert dataset.time_diff_expanded.shape[1] == 10  # num_nodes
+        assert dataset.start_time_expanded.shape[2] == 1   # feature dimension
+        assert dataset.time_diff_expanded.shape[2] == 1    # feature dimension
 
 
 class TestStaticDataset:
@@ -396,6 +472,110 @@ class TestStaticDataset:
         
         with pytest.raises(ValueError, match="c_data and u_data must have same number of samples"):
             StaticDataset(c_data=c_data, u_data=u_data)
+
+
+class TestTestDataset:
+    """Test suite for TestDataset class."""
+    
+    def _create_test_data(self):
+        """Create test data for TestDataset."""
+        np.random.seed(42)
+        u_data = np.random.randn(5, 10, 16, 2)  # [samples, timesteps, nodes, vars]
+        c_data = np.random.randn(5, 10, 16, 1)  # [samples, timesteps, nodes, c_vars]
+        t_values = np.linspace(0, 1, 10)
+        time_indices = np.array([0, 2, 4, 6, 8])
+        
+        stats = {
+            'u': {'mean': np.array([0.1, 0.2]), 'std': np.array([1.0, 1.1])},
+            'c': {'mean': np.array([0.05]), 'std': np.array([0.8])}
+        }
+        
+        metadata = MockMetadata()
+        return u_data, c_data, t_values, time_indices, stats, metadata
+    
+    def test_initialization_fixed_coords(self):
+        """Test TestDataset initialization for fixed coordinates."""
+        u_data, c_data, t_values, time_indices, stats, metadata = self._create_test_data()
+        
+        dataset = TestDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            time_indices=time_indices,
+            stats=stats,
+            is_variable_coords=False
+        )
+        
+        assert len(dataset) == 5  # num_samples
+        assert dataset.num_nodes == 16
+        assert not dataset.is_variable_coords
+    
+    def test_initialization_variable_coords(self):
+        """Test TestDataset initialization for variable coordinates."""
+        u_data, c_data, t_values, time_indices, stats, metadata = self._create_test_data()
+        x_data = np.random.randn(5, 10, 16, 2)  # Variable coordinates
+        
+        dataset = TestDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            time_indices=time_indices,
+            stats=stats,
+            x_data=x_data,
+            is_variable_coords=True
+        )
+        
+        assert len(dataset) == 5
+        assert dataset.is_variable_coords
+        assert dataset.x_data is not None
+    
+    def test_getitem_fixed_coords(self):
+        """Test getting items for fixed coordinates mode."""
+        u_data, c_data, t_values, time_indices, stats, metadata = self._create_test_data()
+        
+        dataset = TestDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            time_indices=time_indices,
+            stats=stats,
+            is_variable_coords=False
+        )
+        
+        input_tensor, target_tensor = dataset[0]
+        
+        # Input tensor should include u + c + dummy_time_features(2)
+        expected_input_dim = 2 + 1 + 2  # u_vars + c_vars + time features
+        assert_tensor_shape(input_tensor, (16, expected_input_dim), "input_tensor")
+        
+        # Target should be [n_timesteps-1, num_nodes, u_vars]
+        expected_target_shape = (len(time_indices)-1, 16, 2)
+        assert_tensor_shape(target_tensor, expected_target_shape, "target_tensor")
+    
+    def test_getitem_variable_coords(self):
+        """Test getting items for variable coordinates mode."""
+        u_data, c_data, t_values, time_indices, stats, metadata = self._create_test_data()
+        x_data = np.random.randn(5, 10, 16, 2)
+        
+        dataset = TestDataset(
+            u_data=u_data,
+            c_data=c_data,
+            t_values=t_values,
+            metadata=metadata,
+            time_indices=time_indices,
+            stats=stats,
+            x_data=x_data,
+            is_variable_coords=True
+        )
+        
+        input_tensor, target_tensor, coord_tensor = dataset[0]
+        
+        expected_input_dim = 2 + 1 + 2  # u_vars + c_vars + time features
+        assert_tensor_shape(input_tensor, (16, expected_input_dim), "input_tensor")
+        assert_tensor_shape(coord_tensor, (16, 2), "coord_tensor")
 
 
 class TestUtilityFunctions:
@@ -508,6 +688,48 @@ class TestUtilityFunctions:
             # Very unlikely but possible - just warn
             import warnings
             warnings.warn("Shuffled and ordered splits happened to be identical - this is very rare but possible")
+    
+    def test_collate_sequential_batch_fixed_coords(self):
+        """Test collate function for sequential data with fixed coordinates."""
+        # Create mock batch with fixed coordinates (2 elements per item)
+        batch = []
+        for i in range(3):  # 3 samples
+            input_tensor = torch.randn(10, 5)  # [nodes, features]
+            target_tensor = torch.randn(10, 2)  # [nodes, u_vars]
+            batch.append((input_tensor, target_tensor))
+        
+        # Test collate function
+        inputs, targets = collate_sequential_batch(batch)
+        
+        # Check output shapes
+        assert_tensor_shape(inputs, (3, 10, 5), "collated_inputs")
+        assert_tensor_shape(targets, (3, 10, 2), "collated_targets")
+    
+    def test_collate_sequential_batch_variable_coords(self):
+        """Test collate function for sequential data with variable coordinates."""
+        # Create mock batch with variable coordinates (3 elements per item)
+        batch = []
+        for i in range(2):  # 2 samples
+            input_tensor = torch.randn(15, 4)  # [nodes, features]
+            target_tensor = torch.randn(15, 1)  # [nodes, u_vars]
+            coord_tensor = torch.rand(15, 2)   # [nodes, coord_dim]
+            batch.append((input_tensor, target_tensor, coord_tensor))
+        
+        # Test collate function
+        inputs, targets, coords = collate_sequential_batch(batch)
+        
+        # Check output shapes
+        assert_tensor_shape(inputs, (2, 15, 4), "collated_inputs")
+        assert_tensor_shape(targets, (2, 15, 1), "collated_targets")
+        assert_tensor_shape(coords, (2, 15, 2), "collated_coords")
+    
+    def test_collate_sequential_batch_invalid_length(self):
+        """Test collate function with invalid batch item length."""
+        # Create batch with incorrect number of elements
+        batch = [(torch.randn(5, 3), torch.randn(5, 1), torch.randn(5, 2), torch.randn(5, 1))]  # 4 elements
+        
+        with pytest.raises(ValueError, match="Unexpected batch item length"):
+            collate_sequential_batch(batch)
 
 
 if __name__ == "__main__":

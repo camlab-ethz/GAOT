@@ -56,7 +56,7 @@
     "dataset": {
         "name": "Poisson-Gauss",
         "metaname": "rigno-unstructured/Poisson-Gauss",
-        "base_path": "/cluster/work/gaot/dataset/",
+        "base_path": "/cluster/work/math/camlab-data/rigno-data/unstructured/",
         "train_size": 2048,
         "val_size": 128,
         "test_size": 256,

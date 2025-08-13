@@ -74,12 +74,14 @@ class DynamicPairDataset(Dataset):
     """
     Dataset for time-dependent data with dynamic time pairs.
     Used for sequential (time-dependent) training.
+    Supports both fixed (fx) and variable (vx) coordinate modes.
     """
     
-    def __init__(self, u_data: np.ndarray, c_data: Optional[np.ndarray], 
-                 t_values: np.ndarray, metadata, max_time_diff: int = 14, time_step: int = 2,
+    def __init__(self, u_data: torch.Tensor, c_data: Optional[torch.Tensor], 
+                 t_values: torch.Tensor, metadata, max_time_diff: int = 14, time_step: int = 2,
                  stepper_mode: str = "output", stats: Optional[dict] = None,
-                 use_time_norm: bool = True, dataset_name: Optional[str] = None):
+                 use_time_norm: bool = True, dataset_name: Optional[str] = None,
+                 x_data: Optional[torch.Tensor] = None, is_variable_coords: bool = False):
         """
         Initialize dynamic pair dataset.
         
@@ -93,16 +95,20 @@ class DynamicPairDataset(Dataset):
             stats: Statistics dictionary
             use_time_norm: Whether to normalize time features
             dataset_name: Name of the dataset
+            x_data: Coordinate data for variable coordinates mode
+            is_variable_coords: Whether using variable coordinates mode
         """
         self.dataset_name = dataset_name
         self.u_data = u_data
         self.c_data = c_data
+        self.x_data = x_data  # For variable coordinates
         self.t_values = t_values
         self.metadata = metadata
         self.stepper_mode = stepper_mode
         self.stats = stats
         self.use_time_norm = use_time_norm
-        
+        self.is_variable_coords = is_variable_coords
+
         self.num_samples, self.num_timesteps, self.num_nodes, self.num_vars = u_data.shape
         
         # Limit timesteps based on max_time_diff
@@ -118,7 +124,7 @@ class DynamicPairDataset(Dataset):
         self.t_out_indices = []
         
         # Generate even lags from 2 to max_time_diff
-        for lag in range(2, num_timesteps + 1, time_step):
+        for lag in range(time_step, num_timesteps + 1, time_step):
             for i in range(0, num_timesteps - lag + 1, time_step):
                 t_in_idx = i
                 t_out_idx = i + lag
@@ -129,24 +135,36 @@ class DynamicPairDataset(Dataset):
         self.t_out_indices = np.array(self.t_out_indices)
         
         self.time_diffs = self.t_values[self.t_out_indices] - self.t_values[self.t_in_indices]
-        
-        # Normalize time differences if requested
+        # Precompute normalized time features for all time pairs
         if self.use_time_norm and self.stats is not None:
-            time_diff_mean = self.stats.get('time_diff_mean', 0.0)
-            time_diff_std = self.stats.get('time_diff_std', 1.0)
-            self.time_diffs_norm = (self.time_diffs - time_diff_mean) / time_diff_std
+            self.start_times = self.t_values[self.t_in_indices]
+            self.start_times_norm = ((self.start_times - self.stats["start_time"]["mean"]) / 
+                                   self.stats["start_time"]["std"])
+            self.time_diffs_norm = ((self.time_diffs - self.stats["time_diffs"]["mean"]) / 
+                                  self.stats["time_diffs"]["std"])
         else:
+            self.start_times_norm = self.t_values[self.t_in_indices]
             self.time_diffs_norm = self.time_diffs
+        
+        # Prepare expanded time features
+        self._prepare_time_features()
     
     def __len__(self):
         return self.num_samples * len(self.t_in_indices)
+    
+    def _prepare_time_features(self):
+        """Prepare expanded time features for all time pairs."""
+        self.start_time_expanded = self.start_times_norm.unsqueeze(1).expand(-1, self.num_nodes)
+        self.time_diff_expanded = self.time_diffs_norm.unsqueeze(1).expand(-1, self.num_nodes)
+        self.start_time_expanded = self.start_time_expanded[..., None]
+        self.time_diff_expanded = self.time_diff_expanded[..., None]
     
     def __getitem__(self, idx):
         """
         Get a time pair sample.
         
         Returns:
-            tuple: Depends on stepper_mode
+            tuple: Input data tuple with time features
         """
         sample_idx = idx // len(self.t_in_indices)
         pair_idx = idx % len(self.t_in_indices)
@@ -155,29 +173,66 @@ class DynamicPairDataset(Dataset):
         t_out_idx = self.t_out_indices[pair_idx]
         
         # Get input and output data
-        u_in = torch.tensor(self.u_data[sample_idx, t_in_idx], dtype=torch.float32)
-        u_out = torch.tensor(self.u_data[sample_idx, t_out_idx], dtype=torch.float32)
+        u_in = self.u_data[sample_idx, t_in_idx]  # [num_nodes, num_vars]
+        u_out = self.u_data[sample_idx, t_out_idx]
+        
+        # Normalize u data
+        if self.stats is not None:
+            u_in_norm = (u_in - self.stats["u"]["mean"]) / self.stats["u"]["std"]
+        else:
+            u_in_norm = u_in
         
         # Get condition data if available
         if self.c_data is not None:
-            c_in = torch.tensor(self.c_data[sample_idx, t_in_idx], dtype=torch.float32)
+            c_in = self.c_data[sample_idx, t_in_idx]
+            if self.stats is not None and "c" in self.stats:
+                c_in_norm = (c_in - self.stats["c"]["mean"]) / self.stats["c"]["std"]
+            else:
+                c_in_norm = c_in
         else:
-            c_in = torch.empty(0)
+            c_in_norm = None
         
-        # Get time information
-        time_diff = torch.tensor(self.time_diffs_norm[pair_idx], dtype=torch.float32)
+        # Prepare input features
+        input_features = [u_in_norm]
+        if c_in_norm is not None:
+            input_features.append(c_in_norm)
         
-        # Return based on stepper mode
+        # Add time features
+        start_time_feat = self.start_time_expanded[pair_idx]  # [num_nodes, 1]
+        time_diff_feat = self.time_diff_expanded[pair_idx]    # [num_nodes, 1]
+        input_features.extend([start_time_feat, time_diff_feat])
+
+        # Concatenate all features
+        input_data = torch.cat(input_features, dim=-1)  # [num_nodes, total_features]
+        
+        # Compute target based on stepper mode
         if self.stepper_mode == "output":
-            return u_in, u_out, c_in, time_diff
+            target = u_out
         elif self.stepper_mode == "residual":
-            u_residual = u_out - u_in
-            return u_in, u_residual, c_in, time_diff
+            if self.stats is not None:
+                res_mean = self.stats["res"]["mean"]
+                res_std = self.stats["res"]["std"]
+                target = (u_out - u_in - res_mean) / res_std
+            else:
+                target = u_out - u_in
         elif self.stepper_mode == "time_der":
-            u_time_der = (u_out - u_in) / self.time_diffs[pair_idx]
-            return u_in, u_time_der, c_in, time_diff
+            time_diff_actual = self.time_diffs[pair_idx]
+            u_time_der = (u_out - u_in) / time_diff_actual
+            if self.stats is not None:
+                der_mean = self.stats["der"]["mean"]
+                der_std = self.stats["der"]["std"]
+                target = (u_time_der - der_mean) / der_std
+            else:
+                target = u_time_der
         else:
             raise ValueError(f"Unsupported stepper_mode: {self.stepper_mode}")
+        
+        # For variable coordinates, also return coordinate data
+        if self.is_variable_coords and self.x_data is not None:
+            x_coord = self.x_data[sample_idx, t_in_idx]
+            return input_data, target, x_coord
+        else:
+            return input_data, target
 
 
 class StaticDataset(Dataset):
@@ -237,6 +292,114 @@ def collate_variable_batch(batch):
     x_batch = torch.stack(x_list)
     
     return c_batch, u_batch, x_batch, encoder_graphs_list, decoder_graphs_list
+
+
+def collate_sequential_batch(batch):
+    """
+    Custom collate function for sequential data batches.
+    Handles both fixed and variable coordinate modes.
+    """
+    if len(batch[0]) == 2:  # Fixed coordinates mode
+        input_list, target_list = zip(*batch)
+        inputs = torch.stack(input_list)
+        targets = torch.stack(target_list)
+        return inputs, targets
+    elif len(batch[0]) == 3:  # Variable coordinates mode  
+        input_list, target_list, coord_list = zip(*batch)
+        inputs = torch.stack(input_list)
+        targets = torch.stack(target_list)
+        coords = torch.stack(coord_list)
+        return inputs, targets, coords
+    else:
+        raise ValueError(f"Unexpected batch item length: {len(batch[0])}")
+
+
+class TestDataset(Dataset):
+    """
+    Dataset for sequential testing with specific time indices.
+    Used for autoregressive prediction evaluation.
+    """
+    
+    def __init__(self, u_data: torch.Tensor, c_data: Optional[torch.Tensor],
+                 t_values: torch.Tensor, metadata, time_indices: np.ndarray,
+                 stats: dict, x_data: Optional[torch.Tensor] = None,
+                 is_variable_coords: bool = False):
+        """
+        Initialize test dataset.
+        
+        Args:
+            u_data: Solution data [n_samples, n_timesteps, n_nodes, n_vars]
+            c_data: Condition data [n_samples, n_timesteps, n_nodes, n_c_vars] or None
+            t_values: Time values [n_timesteps]
+            metadata: Dataset metadata
+            time_indices: Time indices to use [n_test_times]
+            stats: Statistics dictionary
+            x_data: Coordinate data for variable coords mode
+            is_variable_coords: Whether using variable coordinates
+        """
+        self.u_data = u_data
+        self.c_data = c_data
+        self.x_data = x_data
+        self.t_values = t_values
+        self.metadata = metadata
+        self.time_indices = time_indices
+        self.stats = stats
+        self.is_variable_coords = is_variable_coords
+        
+        self.num_samples = u_data.shape[0]
+        self.num_nodes = u_data.shape[2]
+    
+    def __len__(self):
+        return self.num_samples
+    
+    def __getitem__(self, idx):
+        """
+        Get test sample at first time index.
+        
+        Returns:
+            tuple: (input_features, target_sequence) or with coordinates
+        """
+        t_start_idx = self.time_indices[0]
+        
+        # Get initial state
+        u_start = self.u_data[idx, t_start_idx]  # [num_nodes, num_vars]
+        
+        # Normalize input
+        if self.stats is not None:
+            u_start_norm = (u_start - self.stats["u"]["mean"]) / self.stats["u"]["std"]
+        else:
+            u_start_norm = u_start
+        
+        # Get condition data if available
+        if self.c_data is not None:
+            c_start = self.c_data[idx, t_start_idx]
+            if self.stats is not None and "c" in self.stats:
+                c_start_norm = (c_start - self.stats["c"]["mean"]) / self.stats["c"]["std"]
+            else:
+                c_start_norm = c_start
+        else:
+            c_start_norm = None
+        
+        # Prepare input features (at first timestep)
+        input_features = [u_start_norm]
+        if c_start_norm is not None:
+            input_features.append(c_start_norm)
+        
+        # Add dummy time features (will be replaced during autoregressive prediction)
+        dummy_time_feat = torch.zeros((self.num_nodes, 1), dtype=torch.float32)
+        input_features.extend([dummy_time_feat, dummy_time_feat])
+        
+        input_data = torch.cat(input_features, dim=-1)
+        
+        # Get target sequence (excluding first timestep)
+        target_sequence = self.u_data[idx, self.time_indices[1:]]  # [n_timesteps-1, num_nodes, num_vars]
+        
+        # For variable coordinates, also return coordinate data
+        if self.is_variable_coords and self.x_data is not None:
+            x_coord = self.x_data[idx, t_start_idx]
+            return input_data, target_sequence, x_coord
+        else:
+            return input_data, target_sequence
 
 
 def create_data_splits(data: torch.Tensor, train_ratio: float = 0.8, 

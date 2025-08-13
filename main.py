@@ -16,6 +16,7 @@ import torch.distributed as dist
 from src.trainer.stat import StaticTrainer_VX, StaticTrainer_FX
 from src.trainer.seq import SequentialTrainer_FX
 from new_src.trainer.static_trainer import StaticTrainer
+from new_src.trainer.sequential_trainer import SequentialTrainer
 
 class FileParser:
     def __init__(self, filename):
@@ -103,6 +104,7 @@ def run_arg(arg):
         "static_vx": StaticTrainer_VX,
         "sequential_fx": SequentialTrainer_FX,
         "static": StaticTrainer,  # New unified static trainer
+        "sequential": SequentialTrainer,  # New unified sequential trainer
     }[arg.setup["trainer_name"]]
     t = Trainer(arg)
     if arg.setup["train"]:
@@ -111,10 +113,7 @@ def run_arg(arg):
         t.fit()
     if arg.setup["test"]:
         t.load_ckpt()
-        if arg.setup["use_variance_test"]:
-            t.variance_test()
-        else:
-            t.test()
+        t.test()
 
     if getattr(arg.setup, "rank", 0) == 0:
         if os.path.exists(arg.path["database_path"]):

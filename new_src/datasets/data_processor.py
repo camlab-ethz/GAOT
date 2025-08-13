@@ -116,7 +116,6 @@ class DataProcessor:
             x_array = np.stack((xv, yv), axis=-1)
             x_array = x_array.reshape(-1, 2)
             
-            # For generated coordinates, add sample and timestep dimensions
             num_samples = u_array.shape[0]
             x_array = x_array[np.newaxis, np.newaxis, :, :]  # [1, 1, num_nodes, 2]
             x_array = np.repeat(x_array, num_samples, axis=0)  # [num_samples, 1, num_nodes, 2]
@@ -317,7 +316,6 @@ class DataProcessor:
                 mode=self.dataset_config.coord_scaling
             )
         
-        # Apply coordinate scaling
         latent_queries = self.coord_scaler(latent_queries)
         
         return latent_queries
@@ -325,13 +323,13 @@ class DataProcessor:
     def create_data_loaders(self, data_splits: Dict, is_variable_coords: bool, 
                            latent_queries: Optional[torch.Tensor] = None,
                            encoder_graphs: Optional[list] = None,
-                           decoder_graphs: Optional[list] = None) -> Dict[str, DataLoader]:
+                           decoder_graphs: Optional[list] = None,
+                           build_train: bool = True) -> Dict[str, DataLoader]:
         """Create data loaders for train/val/test splits."""
         loaders = {}
         
         for split in ['train', 'val', 'test']:
-            # Skip train/val if not training
-            if split in ['train', 'val'] and not getattr(self.dataset_config, 'train', True):
+            if split in ['train', 'val'] and not build_train:
                 loaders[split] = None
                 continue
             

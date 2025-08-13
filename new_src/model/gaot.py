@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from typing import Optional
+import numpy as np
+from typing import Optional, Dict, List
 from dataclasses import dataclass
 
 from .layers.attn import Transformer
@@ -302,3 +303,175 @@ class GAOT(nn.Module):
             decoder_nbrs=decoder_nbrs)
 
         return output
+    
+    def autoregressive_predict(self,
+                             x_batch: torch.Tensor,
+                             time_indices: np.ndarray,
+                             t_values: np.ndarray,
+                             stats: Dict,
+                             stepper_mode: str = "output",
+                             latent_tokens_coord: Optional[torch.Tensor] = None,
+                             fixed_coord: Optional[torch.Tensor] = None,
+                             encoder_nbrs: Optional[List] = None,
+                             decoder_nbrs: Optional[List] = None,
+                             use_conditional_norm: bool = False) -> torch.Tensor:
+        """
+        Autoregressive prediction for sequential data.
+        
+        Args:
+            x_batch: Initial input batch at time t=0 [batch_size, num_nodes, input_dim]
+            time_indices: Array of time indices for prediction [num_timesteps]
+            t_values: Actual time values corresponding to indices [num_timesteps_total]
+            stats: Statistics dictionary containing normalization parameters
+            stepper_mode: Prediction mode ['output', 'residual', 'time_der']
+            latent_tokens_coord: Regional node coordinates for transformer
+            fixed_coord: Fixed coordinates for fx mode [num_nodes, coord_dim]
+            encoder_nbrs: Encoder neighbor graphs (for vx mode)
+            decoder_nbrs: Decoder neighbor graphs (for vx mode)
+            use_conditional_norm: Whether to use conditional normalization
+            
+        Returns:
+            Predicted outputs over time [batch_size, num_timesteps-1, num_nodes, output_dim]
+        """
+        batch_size, num_nodes, input_dim = x_batch.shape
+        num_timesteps = len(time_indices)
+        predictions = []
+        # Extract statistics for denormalization
+        u_mean = stats["u"]["mean"].to(x_batch.device)
+        u_std = stats["u"]["std"].to(x_batch.device)
+        
+        # Time statistics
+        start_times_mean = stats["start_time"]["mean"]
+        start_times_std = stats["start_time"]["std"]
+        time_diffs_mean = stats["time_diffs"]["mean"]
+        time_diffs_std = stats["time_diffs"]["std"]
+        
+        # Determine feature dimensions
+        u_dim = stats["u"]["mean"].shape[0]
+        c_dim = stats["c"]["mean"].shape[0] if "c" in stats else 0
+        
+        # Extract static condition features and initial state
+        if c_dim > 0:
+            c_features = x_batch[..., u_dim:u_dim+c_dim]  # Static condition features
+        else:
+            c_features = None
+        
+        current_u = x_batch[..., :u_dim]  # Initial state
+        
+        # Determine if we're using variable coordinates
+        is_variable_coords = encoder_nbrs is not None and decoder_nbrs is not None
+        
+        # Autoregressive prediction loop
+        for idx in range(1, num_timesteps):
+            t_in_idx = time_indices[idx-1]
+            t_out_idx = time_indices[idx]
+            
+            start_time = t_values[t_in_idx]
+            time_diff = t_values[t_out_idx] - t_values[t_in_idx]
+            
+            # Normalize time features
+            start_time_norm = (start_time - start_times_mean) / start_times_std
+            time_diff_norm = (time_diff - time_diffs_mean) / time_diffs_std
+            
+            # Prepare time features (expanded to match num_nodes)
+            start_time_expanded = torch.full((batch_size, num_nodes, 1), start_time_norm, 
+                                           dtype=x_batch.dtype, device=x_batch.device)
+            time_diff_expanded = torch.full((batch_size, num_nodes, 1), time_diff_norm,
+                                          dtype=x_batch.dtype, device=x_batch.device)
+            
+            # Build input features
+            input_features = [current_u]
+            if c_features is not None:
+                input_features.append(c_features)
+            input_features.extend([start_time_expanded, time_diff_expanded])
+            
+            x_input = torch.cat(input_features, dim=-1)
+            
+            # Forward pass
+            with torch.no_grad():
+                if use_conditional_norm:
+                    if is_variable_coords:
+                        pred = self.forward(
+                            latent_tokens_coord=latent_tokens_coord,
+                            xcoord=fixed_coord,  # Will be updated for vx mode
+                            pndata=x_input[..., :-1],
+                            condition=x_input[..., 0, -2:-1],
+                            encoder_nbrs=encoder_nbrs,
+                            decoder_nbrs=decoder_nbrs
+                        )
+                    else:
+                        pred = self.forward(
+                            latent_tokens_coord=latent_tokens_coord,
+                            xcoord=fixed_coord,
+                            pndata=x_input[..., :-1],
+                            condition=x_input[..., 0, -2:-1]
+                        )
+                else:
+                    if is_variable_coords:
+                        pred = self.forward(
+                            latent_tokens_coord=latent_tokens_coord,
+                            xcoord=fixed_coord,  # Will be updated for vx mode
+                            pndata=x_input,
+                            encoder_nbrs=encoder_nbrs,
+                            decoder_nbrs=decoder_nbrs
+                        )
+                    else:
+                        pred = self.forward(
+                            latent_tokens_coord=latent_tokens_coord,
+                            xcoord=fixed_coord,
+                            pndata=x_input
+                        )
+                
+                # Process prediction based on stepper mode
+                pred_denorm = self._process_autoregressive_prediction(
+                    pred, current_u, u_mean, u_std, time_diff, stats, stepper_mode
+                )
+                predictions.append(pred_denorm)
+                
+                # Update current state for next iteration
+                current_u = (pred_denorm - u_mean) / u_std
+        
+        return torch.stack(predictions, dim=1)  # [batch_size, num_timesteps-1, num_nodes, output_dim]
+    
+    def _process_autoregressive_prediction(self, pred: torch.Tensor, current_u: torch.Tensor, 
+                                         u_mean: torch.Tensor, u_std: torch.Tensor, 
+                                         time_diff: float, stats: Dict, stepper_mode: str) -> torch.Tensor:
+        """
+        Process prediction based on stepper mode for autoregressive prediction.
+        
+        Args:
+            pred: Raw model prediction
+            current_u: Current normalized state
+            u_mean: Mean for denormalization
+            u_std: Std for denormalization
+            time_diff: Time difference for this step
+            stats: Statistics dictionary
+            stepper_mode: Prediction mode ['output', 'residual', 'time_der']
+            
+        Returns:
+            Denormalized prediction
+        """
+        if stepper_mode == "output":
+            pred_denorm = pred * u_std + u_mean
+            
+        elif stepper_mode == "residual":
+            res_mean = stats["res"]["mean"].to(pred.device)
+            res_std = stats["res"]["std"].to(pred.device)
+            pred_denorm_res = pred * res_std + res_mean
+            
+            current_u_denorm = current_u * u_std + u_mean
+            pred_denorm = current_u_denorm + pred_denorm_res
+            
+        elif stepper_mode == "time_der":
+            der_mean = stats["der"]["mean"].to(pred.device)
+            der_std = stats["der"]["std"].to(pred.device)
+            pred_denorm_der = pred * der_std + der_mean
+            
+            current_u_denorm = current_u * u_std + u_mean
+            time_diff_tensor = torch.tensor(time_diff, dtype=pred.dtype, device=pred.device)
+            pred_denorm = current_u_denorm + time_diff_tensor * pred_denorm_der
+            
+        else:
+            raise ValueError(f"Unsupported stepper_mode: {stepper_mode}")
+        
+        return pred_denorm

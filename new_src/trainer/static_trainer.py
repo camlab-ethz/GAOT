@@ -28,7 +28,7 @@ class StaticTrainer(BaseTrainer):
         self.coord_mode = None  # Will be determined from data
         self.coord_dim = None
         self.latent_tokens_coord = None
-        self.coord = None  # For fx mode
+        self.coord = None       # For fx mode
         
         # Data loaders
         self.train_loader = None
@@ -41,32 +41,26 @@ class StaticTrainer(BaseTrainer):
         """Initialize dataset and data loaders."""
         print("Initializing dataset...")
         
-        # Create data processor
         self.data_processor = DataProcessor(
             dataset_config=dataset_config,
             metadata=self.metadata,
             dtype=self.dtype
         )
         
-        # Load and process data
         data_splits, is_variable_coords = self.data_processor.load_and_process_data()
         
-        # Determine coordinate mode
         self.coord_mode = 'vx' if is_variable_coords else 'fx'
         print(f"Detected coordinate mode: {self.coord_mode}")
         
-        # Generate latent queries
         latent_queries = self.data_processor.generate_latent_queries(
             self.model_config.latent_tokens_size
         )
         self.latent_tokens_coord = latent_queries
         
-        # Get coordinate dimension
         coord_sample = (data_splits['train']['x'] if is_variable_coords 
                        else data_splits['train']['x'])
         self.coord_dim = coord_sample.shape[-1]
         
-        # Store input/output channel information
         c_sample = data_splits['train']['c']
         u_sample = data_splits['train']['u']
         
@@ -74,10 +68,8 @@ class StaticTrainer(BaseTrainer):
         self.num_output_channels = u_sample.shape[-1]
         
         if is_variable_coords:
-            # Variable coordinates mode - need to build graphs
             self._init_variable_coords_mode(data_splits)
         else:
-            # Fixed coordinates mode - simpler setup
             self._init_fixed_coords_mode(data_splits)
         
         print("Dataset initialization complete.")
@@ -116,11 +108,11 @@ class StaticTrainer(BaseTrainer):
                 'test': all_graphs['test']['decoder']
             }
         }
-        
         loaders = self.data_processor.create_data_loaders(
             data_splits=data_splits,
             is_variable_coords=True,
             latent_queries=self.latent_tokens_coord,
+            build_train=self.setup_config.train,
             **loader_kwargs
         )
         
@@ -169,9 +161,7 @@ class StaticTrainer(BaseTrainer):
         """Training step for fixed coordinates mode."""
         x_batch, y_batch = batch
         
-        # Handle case where c_data might be empty tensor
         if x_batch.numel() == 0:
-            # No condition data, create None
             x_batch = None
         
         x_batch = x_batch.to(self.device) if x_batch is not None else None
@@ -191,7 +181,6 @@ class StaticTrainer(BaseTrainer):
         """Training step for variable coordinates mode."""
         x_batch, y_batch, coord_batch, encoder_graph_batch, decoder_graph_batch = batch
         
-        # Handle empty condition data
         if x_batch.numel() == 0:
             x_batch = None
         
@@ -291,38 +280,37 @@ class StaticTrainer(BaseTrainer):
                 else:
                     pred, y_sample, x_sample, coord_used = self._test_step_variable_coords(batch)
                 
-                # Denormalize predictions and targets
                 pred_denorm = denormalize_data(pred, self.data_processor.u_mean.to(self.device), 
                                              self.data_processor.u_std.to(self.device))
                 y_denorm = denormalize_data(y_sample, self.data_processor.u_mean.to(self.device), 
                                           self.data_processor.u_std.to(self.device))
                 
-                # Compute relative errors
                 relative_errors = compute_batch_errors(y_denorm, pred_denorm, self.metadata)
                 all_relative_errors.append(relative_errors)
         
-        # Compute final metrics
         all_relative_errors = torch.cat(all_relative_errors, dim=0)
         final_metric = compute_final_metric(all_relative_errors)
         self.config.datarow["relative error (direct)"] = final_metric
         print(f"Relative error: {final_metric}")
         
-        # Denormalize input for plotting
         if x_sample is not None and self.data_processor.c_mean is not None:
             x_sample_denorm = denormalize_data(x_sample, self.data_processor.c_mean.to(self.device),
                                              self.data_processor.c_std.to(self.device))
         else:
             x_sample_denorm = x_sample
-        
-        # Create and save plots
+
+        original_coords = self.data_processor.coord_scaler.inverse_transform(coord_used.cpu())
+        coord_plot = original_coords.numpy()
+
         fig = plot_estimates(
             u_inp=x_sample_denorm[-1].cpu().numpy() if x_sample_denorm is not None else None,
             u_gtr=y_denorm[-1].cpu().numpy(),
             u_prd=pred_denorm[-1].cpu().numpy(),
-            x_inp=coord_used.cpu().numpy(),
-            x_out=coord_used.cpu().numpy(),
+            x_inp=coord_plot,
+            x_out=coord_plot,
             names=self.metadata.names.get('c', ['input']) if x_sample_denorm is not None else None,
-            symmetric=self.metadata.signed['u']
+            symmetric=self.metadata.signed['u'],
+            domain=self.metadata.domain_x
         )
         
         fig.savefig(self.path_config.result_path, dpi=300, bbox_inches="tight", pad_inches=0.1)

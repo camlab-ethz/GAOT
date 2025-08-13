@@ -29,10 +29,6 @@ class SetUpConfig:
     train: bool = True                                          # Whether to run training phase
     test: bool = False                                          # Whether to run testing phase
     ckpt: bool = False                                          # Whether to load/save checkpoints
-    use_variance_test: bool = False                             # Whether to use variance testing
-    measure_inf_time: bool = False                              # Whether to measure inference time
-    visualize_encoder_output: bool = False                      # Whether to visualize encoder output
-    vis_component: str = "encoder"                              # Component to visualize: ["encoder", "processor"]
     
     # Distributed training parameters
     distributed: bool = False                                   # Enable distributed training
@@ -52,18 +48,18 @@ class ModelArgsConfig:
 @dataclass
 class ModelConfig:
     """Model configuration."""
-    name: str = "gaot"                                          # Model name: "gaot" (unified model)
-    use_conditional_norm: bool = False                          # Time-conditional normalization
-    latent_tokens_size: Tuple[int, int] = (64, 64)                    # Latent token dimensions (H,W) or (H,W,D)
-    args: ModelArgsConfig = field(default_factory=ModelArgsConfig)  # Model component configurations
+    name: str = "gaot"                                             # Model name: "gaot"
+    use_conditional_norm: bool = False                             # Time-conditional normalization
+    latent_tokens_size: Tuple[int, int] = (64, 64)                 # Latent token dimensions (H,W) or (H,W,D)
+    args: ModelArgsConfig = field(default_factory=ModelArgsConfig) # Model component configurations
 
 
 @dataclass
 class DatasetConfig:
     """Dataset configuration."""
     name: str = "CE-Gauss"                                      # Dataset name
-    metaname: str = "rigno-unstructured/CE-Gauss"              # Dataset metadata identifier
-    base_path: str = "/cluster/work/math/camlab-data/rigno-unstructured/"  # Base path to dataset
+    metaname: str = "compressible_flow/CE-Gauss"                # Dataset metadata identifier
+    base_path: str = "/cluster/work/math/camlab-data/rigno-data/unstructured/"  # Base path to dataset
     train_size: int = 1024                                      # Training set size
     val_size: int = 128                                         # Validation set size
     test_size: int = 256                                        # Test set size
@@ -78,6 +74,7 @@ class DatasetConfig:
     
     # Time-dependent dataset parameters
     max_time_diff: int = 14                                     # Maximum time difference for pairs
+    time_step: int = 2                                          # Time step for sequence data
     use_time_norm: bool = True                                  # Normalize time features
     metric: str = "final_step"                                  # Evaluation metric: ["final_step", "all_step"]
     predict_mode: str = "all"                                   # Inference mode: ["all", "autoregressive", "direct", "star"]
@@ -99,44 +96,3 @@ class PathConfig:
     result_path: str = ".result/test/test.png"                  # Result visualization path
     database_path: str = ".database/test/test.csv"              # Experiment database path
 
-
-# Coordinate mode detection utility
-class CoordinateMode:
-    """Utility class for determining coordinate modes."""
-    
-    @staticmethod
-    def detect_mode(x_data, metadata):
-        """
-        Detect coordinate mode (fx or vx) from data characteristics.
-        
-        Args:
-            x_data: Coordinate data tensor
-            metadata: Dataset metadata
-            
-        Returns:
-            str: Either 'fx' (fixed) or 'vx' (variable)
-        """
-        if metadata.fix_x:
-            return 'fx'
-        else:
-            return 'vx'
-    
-    @staticmethod
-    def is_fixed_coordinates(x_data):
-        """
-        Check if coordinates are fixed (same across samples).
-        
-        Args:
-            x_data: Coordinate data tensor
-            
-        Returns:
-            bool: True if coordinates are fixed
-        """
-        if x_data.dim() == 2:  # Shape: [num_nodes, coord_dim]
-            return True
-        elif x_data.dim() == 3:  # Shape: [num_samples, num_nodes, coord_dim]
-            # Check if all samples have identical coordinates
-            first_sample = x_data[0]
-            return all(torch.allclose(x_data[i], first_sample, rtol=1e-5) for i in range(1, x_data.size(0)))
-        else:
-            return False

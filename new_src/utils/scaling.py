@@ -101,9 +101,8 @@ class CoordinateScaler:
         if self.scale_params is None:
             # Auto-fit if not already fitted
             self.fit(coords)
-        
         original_shape = coords.shape
-        coords_flat = coords.view(-1, coords.shape[-1])
+        coords_flat = coords.view(-1, original_shape[-1])
         
         if self.mode == "global_scaling":
             coord_min = self.scale_params['min'].to(coords.device)

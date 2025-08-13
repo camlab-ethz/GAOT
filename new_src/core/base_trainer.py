@@ -206,10 +206,7 @@ class BaseTrainer(ABC):
         self.save_ckpt()
 
         if len(result['train']['loss']) == 0:
-            if self.setup_config.use_variance_test:
-                self.variance_test()
-            else:
-                self.test()
+            self.test()
         else:
             kwargs = {
                 "epochs": result['train']['epoch'],
@@ -225,11 +222,7 @@ class BaseTrainer(ABC):
                 kwargs['best_loss'] = result['best']['loss']
             
             self.plot_losses(**kwargs)
-
-            if self.setup_config.use_variance_test:
-                self.variance_test()
-            else:
-                self.test()
+            self.test()
 
     def plot_losses(self, epochs, losses, val_epochs=None, val_losses=None, 
                    best_epoch=None, best_loss=None):
