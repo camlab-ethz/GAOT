@@ -7,7 +7,7 @@ For the optimized implementation of ultra-large 3D datasets with varying data re
 
 ## :sparkles: Updates
 
-***13/09/2025***
+***13/08/2025***
 1.  **Unified Architecture**: Complete refactoring with unified trainers supporting both 2D/3D coordinates and fixed/variable coordinate modes
 2. **Sequential Data Support**: New comprehensive support for time-dependent datasets with autoregressive prediction
 3. **Streamlined API**: Simplified configuration system with automatic coordinate mode detection
