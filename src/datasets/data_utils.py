@@ -207,7 +207,7 @@ class DynamicPairDataset(Dataset):
         
         # Compute target based on stepper mode
         if self.stepper_mode == "output":
-            target = u_out
+            target = (u_out - self.stats["u"]["mean"]) / self.stats["u"]["std"]
         elif self.stepper_mode == "residual":
             if self.stats is not None:
                 res_mean = self.stats["res"]["mean"]
