@@ -76,6 +76,10 @@
               <span class="author-block"><sup>5</sup>Centre for Applicable Mathematics, TIFR, India</span>
             </div>
 
+            <div class="has-text-centered" style="margin-top: 1rem;">
+              <p class="is-size-5"><strong>NeurIPS 2025</strong></p>
+            </div>
+
             <div class="column has-text-centered">
               <div class="publication-links">
                 <span class="link-block">
@@ -94,6 +98,12 @@
                   <a href="https://arxiv.org/abs/2505.18781" target="_blank" class="external-link button is-normal is-rounded is-dark"> 
                     <span class="icon"><i class="ai ai-arxiv"></i></span>
                     <span>arXiv</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://huggingface.co/datasets/shiwen0710/Datasets_for_GAOT" target="_blank" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"> 🤗 </span>
+                    <span>Dataset</span>
                   </a>
                 </span>
               </div>
@@ -117,7 +127,7 @@
           <h2 class="title is-3 has-text-centered">Abstract</h2>
           <div class="content has-text-justified">
             <p>
-              The very challenging task of learning solution operators of PDEs on arbitrary domains accurately and efficiently is of vital importance to engineering and industrial simulations. Despite the existence of many operator learning algorithms to approximate such PDEs, we find that accurate models are not necessarily computationally efficient and vice versa. We address this issue by proposing a geometry aware operator transformer (GAOT) for learning PDEs on arbitrary domains. GAOT combines novel multiscale attentional graph neural operator encoders and decoders, together with geometry embeddings and (vision) transformer processors to accurately map information about the domain and the inputs into a robust approximation of the PDE solution. Multiple innovations in the implementation of GAOT also ensure computational efficiency and scalability. We demonstrate this significant gain in both accuracy and efficiency of GAOT over several baselines on a large number of learning tasks from a diverse set of PDEs, including achieving state of the art performance on a large scale three-dimensional industrial CFD dataset.
+              The very challenging task of learning solution operators of PDEs on arbitrary domains accurately and efficiently is of vital importance to engineering and industrial simulations. Despite the existence of many operator learning algorithms to approximate such PDEs, we find that accurate models are not necessarily computationally efficient and vice versa. We address this issue by proposing a geometry aware operator transformer (GAOT) for learning PDEs on arbitrary domains. GAOT combines novel multiscale attentional graph neural operator encoders and decoders, together with geometry embeddings and (vision) transformer processors to accurately map information about the domain and the inputs into a robust approximation of the PDE solution. Multiple innovations in the implementation of GAOT also ensure computational efficiency and scalability. We demonstrate this significant gain in both accuracy and efficiency of GAOT over several baselines on a large number of learning tasks from a diverse set of PDEs, including achieving state of the art performance on three large scale three-dimensional industrial CFD datasets.
             </p>
           </div>
           <div class="container is-max-desktop" style="margin-top: 2rem;">
@@ -160,7 +170,7 @@
         <div class="column is-four-fifths">
           <div class="content has-text-justified">
             <p>
-              We extensively test GAOT on 24 challenging benchmarks for both time-independent and time-dependent PDEs of various types, ranging from regular grids to random point clouds to highly unstructured adapted grids, and compare it with 13 widely used baselines.
+              We extensively test GAOT on 28 challenging benchmarks for both time-independent and time-dependent PDEs of various types, ranging from regular grids to random point clouds to highly unstructured adapted grids, and compare it with 13 widely used baselines.
             </p>
           </div>
         </div>
@@ -445,10 +455,10 @@
               <tbody>
                 <tr>
                   <td>GAOT</td>
-                  <td class="rank-one">4.9409</td>
-                  <td class="rank-one">1.1017</td>
-                  <td class="rank-one">8.7370</td>
-                  <td class="rank-one">1.5674</td>
+                  <td class="rank-one">4.2694</td>
+                  <td class="rank-one">1.0699</td>
+                  <td class="rank-one">8.6878</td>
+                  <td class="rank-one">1.5429</td>
                 </tr>
                 <tr>
                   <td>FIGConvNet</td>
@@ -482,6 +492,56 @@
             </table>
           </div>
         </div>
+        <div class="item">
+          <div class="table-container">
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+              <caption>Table 4: Comparison of GAOT and GINO across two benchmarks with MSE (×10⁻²) and Mean AE (×10⁻¹). <strong>Cp</strong>: Pressure Coefficient, <strong>WSS</strong>: Wall Shear Stress, <strong>P</strong>: Pressure, <strong>Cf</strong>: Skin Friction Coefficient. <strong>DML</strong>: DrivAerML dataset, <strong>CRM</strong>: NASA CRM dataset.</caption>
+              <thead>
+                <tr>
+                  <th rowspan="2">Model</th>
+                  <th colspan="2">Cp (DML)</th>
+                  <th colspan="2">WSS (DML)</th>
+                  <th colspan="2">P (CRM)</th>
+                  <th colspan="2">Cf (CRM)</th>
+                </tr>
+                <tr>
+                  <th>MSE</th>
+                  <th>Mean AE</th>
+                  <th>MSE</th>
+                  <th>Mean AE</th>
+                  <th>MSE</th>
+                  <th>Mean AE</th>
+                  <th>MSE</th>
+                  <th>Mean AE</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>GAOT</td>
+                  <td class="rank-one">5.1729</td>
+                  <td class="rank-one">1.2352</td>
+                  <td class="rank-one">16.9818</td>
+                  <td class="rank-one">2.1640</td>
+                  <td class="rank-one">7.7170</td>
+                  <td class="rank-one">1.6014</td>
+                  <td class="rank-one">16.1091</td>
+                  <td class="rank-one">2.2305</td>
+                </tr>
+                <tr>
+                  <td>GINO</td>
+                  <td class="rank-two">8.8124</td>
+                  <td class="rank-two">1.5238</td>
+                  <td class="rank-two">28.4832</td>
+                  <td class="rank-two">2.7330</td>
+                  <td class="rank-two">10.5688</td>
+                  <td class="rank-two">1.7450</td>
+                  <td class="rank-two">21.1789</td>
+                  <td class="rank-two">2.4240</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -508,6 +568,10 @@
                       <option value="static/images/vis/bluff_body.png">Bluff-Body</option>
                       <option value="static/images/vis/pressure_comparison.png">DrivAerNet++ Pressure</option>
                       <option value="static/images/vis/wws.png">DrivAerNet++ Wall Shear Stress</option>
+                      <option value="static/images/vis/drivaerml_pressure.png">DrivAerML Pressure Coefficient</option>
+                      <option value="static/images/vis/drivaerml_wss.png">DrivAerML Wall Shear Stress</option>
+                      <option value="static/images/vis/nasa_crm_pressure.png">NASA-CRM Pressure</option>
+                      <option value="static/images/vis/nasa_crm_sfc.png">NASA-CRM Surface Friction Coefficient</option>
                     </optgroup>
                     <optgroup label="Time-dependent dataset">
                       <option value="static/images/vis/ce_gauss.png">CE-Gauss</option>
@@ -574,6 +638,10 @@
       'static/images/vis/bluff_body.png': 'Model input, ground-truth solution, model estimate and point distribution of test samples of the Bluff-Body dataset.',
       'static/images/vis/pressure_comparison.png': 'Model input, ground-truth solution, model estimate of a test sample N_S_WWS_WM_172 of the surface pressure on the DrivAerNet++.',
       'static/images/vis/wws.png': 'Model input, ground-truth solution, model estimate of a test sample N_S_WWS_WM_172 of the surface wall shear stress on the DrivAerNet++.',
+      'static/images/vis/drivaerml_pressure.png': 'Model input, ground-truth solution, model estimate of a test sample Boundary_78 of the surface pressure coefficient on the DrivAerML.',
+      'static/images/vis/drivaerml_wss.png': 'Model input, ground-truth solution, model estimate of a test sample Boundary_78 of the surface wall shear stress on the DrivAerML.',
+      'static/images/vis/nasa_crm_pressure.png': 'Model input, ground-truth solution, model estimate of a test sample of the surface pressure on the NASA-CRM.',
+      'static/images/vis/nasa_crm_sfc.png': 'Model input, ground-truth solution, model estimate of a test sample of the surface friction coefficient on the NASA-CRM.',
       'static/images/vis/ce_gauss.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured CE-Gauss dataset.',
       'static/images/vis/ce_rp.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured CE-RP dataset.',
       'static/images/vis/ns_gauss.png': 'Model input at $t=t_0$, ground-truth solution and model estimate at $t=t_{14}$ of a test sample unstructured NS-Gauss dataset.',
